@@ -19,11 +19,14 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: 'pnpm dev',
-        url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-      },
+  // CI runs against a production build (`next start`, matching what's
+  // actually deployed) with its own throwaway Postgres/Redis services and no
+  // external deployment involved. Locally, `pnpm dev` + reuseExistingServer
+  // lets a developer keep their own dev server running across test runs.
+  webServer: {
+    command: process.env.CI ? 'pnpm start' : 'pnpm dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
 });

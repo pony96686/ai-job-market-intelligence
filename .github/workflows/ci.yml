@@ -83,7 +83,34 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/master'
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: copilot
+          POSTGRES_PASSWORD: copilot
+          POSTGRES_DB: copilot_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      DATABASE_URL: postgresql://copilot:copilot@localhost:5432/copilot_test
+      REDIS_URL: redis://localhost:6379
+      EMAIL_FROM: test@example.com
+      ENABLE_TEST_ROUTES: 'true'
+      AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+      AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      RESEND_API_KEY: ${{ secrets.CI_RESEND_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.CI_STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.CI_STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRICE_ID_PRO: ${{ secrets.CI_STRIPE_PRICE_ID_PRO }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -92,16 +119,11 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate:deploy
+      - run: pnpm db:seed
+      - run: pnpm build
       - run: pnpm --filter @ai-job-market-intelligence/web exec playwright install --with-deps chromium
-      - name: Run E2E tests
-        env:
-          BASE_URL: ${{ secrets.STAGING_URL }}
-        run: |
-          if [ -z "$BASE_URL" ]; then
-            echo "STAGING_URL not configured yet — skipping E2E tests."
-            exit 0
-          fi
-          pnpm test:e2e
+      - run: pnpm test:e2e
 
   deploy:
     runs-on: ubuntu-latest
