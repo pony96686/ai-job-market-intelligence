@@ -126,6 +126,7 @@
   },
   "jobs": {
     "title": "Jobs",
+    "showingCount": "Showing {shown} of {total}",
     "loadMore": "Load More",
     "loading": "Loading...",
     "failedToLoad": "Failed to load jobs",

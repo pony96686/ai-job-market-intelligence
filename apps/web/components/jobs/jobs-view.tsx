@@ -54,10 +54,14 @@ export function JobsView() {
     });
 
   const jobs = data?.pages.flatMap((p) => p.data) ?? [];
+  const total = data?.pages.at(-1)?.meta.total ?? 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* -mx-6/-mt-6 cancel out <main>'s p-6 (see (dashboard)/layout.tsx) so
+          this spans full-bleed edge-to-edge once stuck, instead of sitting
+          inset within the page's normal content padding. */}
+      <div className="sticky top-0 z-20 -mx-6 -mt-6 flex flex-wrap items-center justify-between gap-4 border-b border-border bg-background px-6 py-4">
         <h1 className="text-2xl font-semibold">{t('title')}</h1>
         <div className="flex flex-wrap items-center gap-4">
           <JobFilters
@@ -83,6 +87,9 @@ export function JobsView() {
         />
       ) : (
         <>
+          <p className="text-sm text-muted-foreground">
+            {t('showingCount', { shown: jobs.length, total })}
+          </p>
           <div className="space-y-3">
             {jobs.map((job) => (
               <JobCard key={job.id} job={job} />
