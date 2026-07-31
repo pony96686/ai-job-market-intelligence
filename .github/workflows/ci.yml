@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -51,13 +51,13 @@ jobs:
     env:
       DATABASE_URL: postgresql://copilot:copilot@localhost:5432/copilot_test
       REDIS_URL: redis://localhost:6379
-      AUTH_SECRET: test-secret-for-ci-only-32chars
-      OPENAI_API_KEY: sk-test-mock
-      RESEND_API_KEY: re_test_mock
       EMAIL_FROM: test@example.com
-      STRIPE_SECRET_KEY: sk_test_mock
-      STRIPE_WEBHOOK_SECRET: whsec_test_mock
-      STRIPE_PRICE_ID_PRO: price_test_mock
+      AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+      OPENROUTER_API_KEY: ${{ secrets.CI_OPENROUTER_API_KEY }}
+      RESEND_API_KEY: ${{ secrets.CI_RESEND_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.CI_STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.CI_STRIPE_WEBHOOK_SECRET }}
+      STRIPE_PRICE_ID_PRO: ${{ secrets.CI_STRIPE_PRICE_ID_PRO }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -86,14 +86,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
         env:
-          DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
-          AUTH_SECRET: build-placeholder-secret-32chars
-          STRIPE_SECRET_KEY: sk_test_placeholder
+          DATABASE_URL: postgresql://copilot:copilot@localhost:5432/copilot_test
+          AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.CI_STRIPE_SECRET_KEY }}
 
   e2e:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master' && secrets.STAGING_URL != ''
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -112,7 +112,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -127,4 +127,3 @@ jobs:
         run: pnpm db:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      # Vercel + Railway 通过 Git 集成自动部署，此 job 仅跑 migration

@@ -11,6 +11,8 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-336791.svg)
 
+**[在线体验 →](https://ai-job-market-intelligenceweb-production.up.railway.app)**
+
 </div>
 
 ---
@@ -57,7 +59,7 @@
 | 多语言 | next-intl（`en` 默认 / `zh`） |
 | 测试 | Vitest（单元）+ Playwright（E2E） |
 | CI | GitHub Actions |
-| 部署 | Vercel（Web）+ Railway（Worker、Postgres、Redis） |
+| 部署 | Railway（单一项目：Postgres + Redis + Worker + Web） |
 
 ## 架构
 
@@ -149,9 +151,12 @@ pnpm dev
 
 ## 部署
 
-- **Web** 通过 [Vercel](https://vercel.com) 原生 Git 集成自动部署（每个分支自动生成预览部署，`main` 分支部署到生产）
-- **Worker + Postgres + Redis** 跑在 [Railway](https://railway.app) 的同一个项目里（Worker 只跑 1 个常驻实例，因为 BullMQ 需要持久化进程和原生 TCP Redis 连接，这是 Vercel Serverless Function 做不到的）
-- **CI**（GitHub Actions）在每次 push/PR 时跑 lint → typecheck → test → build，并在部署到 `main` 前执行数据库 migration
+全部跑在同一个 [Railway](https://railway.app) 项目里，四个服务：
+
+- **Postgres**（自定义 `pgvector/pgvector:pg16` 镜像，不用 Railway 内置的 Postgres 插件——插件默认镜像不保证带 pgvector 扩展）+ **Redis**，作为 Database 资源
+- **Worker** 和 **Web** 直接连接 GitHub 仓库，用 Railway 的 Railpack 构建器（`pnpm --filter <package> build`/`start`），push 到 `master` 自动重新构建部署。Worker 需要持久化进程常驻（BullMQ 需要原生 TCP Redis 连接 + 持续运行的 repeatable job），所以是 Railway 的常驻服务，不是 Serverless Function
+- 四个服务在同一个 Railway 内网里，Worker/Web 用内网地址连 Postgres/Redis，不走公网
+- **CI**（GitHub Actions）在每次 push/PR 时跑 lint → typecheck → test → build，并在 `master` 分支上执行数据库 migration（Railway 自己的 GitHub 集成负责实际的服务部署，跟这个 workflow 是各自独立触发的）
 
 ## License
 

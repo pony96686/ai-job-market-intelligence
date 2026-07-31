@@ -14,6 +14,8 @@ what skills you're missing).
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%20%2B%20pgvector-336791.svg)
 
+**[Live Demo →](https://ai-job-market-intelligenceweb-production.up.railway.app)**
+
 </div>
 
 ---
@@ -77,7 +79,7 @@ AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
 | i18n | next-intl (`en` default / `zh`) |
 | Testing | Vitest (unit) + Playwright (E2E) |
 | CI | GitHub Actions |
-| Deployment | Vercel (web) + Railway (worker, Postgres, Redis) |
+| Deployment | Railway (single project: Postgres + Redis + Worker + Web) |
 
 ## Architecture
 
@@ -178,13 +180,21 @@ key needed.
 
 ## Deployment
 
-- **Web** deploys to [Vercel](https://vercel.com) via its native Git integration
-  (auto preview deployments per branch, production on `main`).
-- **Worker + Postgres + Redis** run on [Railway](https://railway.app) as a single
-  project (one long-running worker instance, since BullMQ needs a persistent process
-  and a raw TCP Redis connection that Vercel's serverless functions can't provide).
+Everything runs in a single [Railway](https://railway.app) project, as four services:
+
+- **Postgres** (custom `pgvector/pgvector:pg16` image, not Railway's built-in Postgres
+  plugin — the plugin's default image doesn't guarantee the pgvector extension) and
+  **Redis** as database add-ons.
+- **Worker** and **Web** connected directly to the GitHub repo, built with Railway's
+  Railpack builder (`pnpm --filter <package> build` / `start`), auto-deploying on every
+  push to `master`. Worker needs a persistent long-running process (BullMQ requires a
+  raw TCP Redis connection and continuously running repeatable jobs), which is why it's
+  a Railway service rather than a serverless function.
+- All four services share the same Railway internal network, so Worker/Web connect to
+  Postgres/Redis via internal hostnames rather than public endpoints.
 - **CI** (GitHub Actions) runs lint → typecheck → test → build on every push/PR, and
-  applies database migrations before deploy on `main`.
+  applies database migrations before Railway's own deploy on `master` (Railway's GitHub
+  integration handles the actual service deploys, independently of this workflow).
 
 ## License
 
