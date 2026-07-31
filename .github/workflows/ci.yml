@@ -93,7 +93,7 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/master' && secrets.STAGING_URL != ''
+    if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -105,9 +105,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ai-job-market-intelligence/web exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      - name: Run E2E tests
         env:
           BASE_URL: ${{ secrets.STAGING_URL }}
+        # `if:` can't read the secrets context directly (GitHub Actions
+        # rejects it at parse time), so the "skip until STAGING_URL exists"
+        # check has to happen here in shell instead of in a job/step `if:`.
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "STAGING_URL not configured yet — skipping E2E tests."
+            exit 0
+          fi
+          pnpm test:e2e
 
   deploy:
     runs-on: ubuntu-latest
