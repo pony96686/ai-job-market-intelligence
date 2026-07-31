@@ -4,7 +4,7 @@ import { SCORING_SYSTEM_PROMPT } from '../prompts/scoring-system';
 import { buildScoringUserPrompt } from '../prompts/scoring-user';
 import type { JobInput, ProfileInput } from '../types';
 
-const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
+const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b:free';
 const LLM_MAX_RETRIES = 2; // initial attempt + 1 retry
 
 const LLMScoreOutputSchema = z.object({
@@ -54,7 +54,8 @@ export async function computeLLMScore(
   for (let attempt = 1; attempt <= LLM_MAX_RETRIES; attempt++) {
     try {
       return await callLLM(profile, job);
-    } catch {
+    } catch (error) {
+      console.error(`[llm-score] attempt ${attempt}/${LLM_MAX_RETRIES} failed:`, error);
       if (attempt === LLM_MAX_RETRIES) return null;
     }
   }
