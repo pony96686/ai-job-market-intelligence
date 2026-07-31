@@ -1,0 +1,25 @@
+-- Manual: Prisma's migrate diff engine does not track changes inside
+-- Unsupported() type strings, same situation as the two prior vector-
+-- dimension migrations in this repo's history.
+--
+-- Reverts the 1536-dim revert from 20260729190446_v1_job_ingestion_engine.
+-- Explicit product decision: local/dev embedding generation uses the free
+-- OpenRouter model nvidia/llama-nemotron-embed-vl-1b-v2:free (2048 dims)
+-- instead of OpenAI text-embedding-3-small (1536 dims, documented in
+-- ai-scoring.md §3.1) to keep local iteration free. Known tradeoffs the
+-- user was informed of and accepted before requesting this:
+--   - the free model's own terms say "trial use only, do not use in
+--     production" and log all prompts/output — profile/job text sent for
+--     embedding is not private on this model, unlike a real OpenAI key
+--   - it's a vision-language (VL) embedding model, not optimized for
+--     plain-text semantic similarity, so match quality may be worse
+-- ai-scoring.md still documents the 1536-dim OpenAI model as the intended
+-- production choice; this migration does not update that doc. Before a
+-- real production deploy, someone MUST either switch back to a
+-- text-embedding-3-small-compatible 1536-dim setup, or get technical
+-- sign-off to change the documented architecture to 2048/nvidia permanently.
+--
+-- Both columns are confirmed empty (no real embeddings generated yet under
+-- the 1536-dim schema), so this is a safe direct ALTER, no backfill needed.
+ALTER TABLE "job_embeddings" ALTER COLUMN "embedding" TYPE vector(2048);
+ALTER TABLE "user_profiles" ALTER COLUMN "profile_embedding" TYPE vector(2048);

@@ -1,0 +1,3 @@
+export const FREE_DAILY_SCORE_LIMIT = 10;
+
+export const HIGH_MATCH_SCORE_THRESHOLD = 80;

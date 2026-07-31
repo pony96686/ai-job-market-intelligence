@@ -1,0 +1,29 @@
+{
+  "name": "@ai-job-market-intelligence/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@ai-job-market-intelligence/ai": "workspace:*",
+    "@ai-job-market-intelligence/db": "workspace:*",
+    "@ai-job-market-intelligence/shared": "workspace:*",
+    "bullmq": "^5.28.1",
+    "ioredis": "^5.4.1",
+    "pino": "^9.5.0",
+    "resend": "^6.18.1",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}

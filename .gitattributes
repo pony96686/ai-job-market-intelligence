@@ -1,0 +1,16 @@
+# Normalize all text files to LF on checkin, regardless of OS
+* text=auto eol=lf
+
+# Windows-specific scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files — do not touch line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

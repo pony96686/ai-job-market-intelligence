@@ -1,0 +1,212 @@
+{
+  "metadata": {
+    "title": "AI Job Market Intelligence",
+    "description": "AI-scored remote job matching SaaS"
+  },
+  "common": {
+    "appName": "AI Job Market Intelligence",
+    "retry": "Retry",
+    "loading": "Loading..."
+  },
+  "validation": {
+    "fieldLabels": {
+      "skills": "Skills",
+      "experienceYears": "Years of experience",
+      "preferredRoles": "Preferred roles"
+    },
+    "required": "{field} is required",
+    "arrayTooSmall": "{field} must have at least {min} item(s)",
+    "arrayTooBig": "{field} must have at most {max} item(s)",
+    "stringTooShort": "{field} cannot be empty",
+    "stringTooLong": "{field} must be at most {max} characters",
+    "numberTooSmall": "{field} must be at least {min}",
+    "numberTooBig": "{field} must be at most {max}",
+    "invalidType": "{field} is invalid"
+  },
+  "localeSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "zh": "中文"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "tagline": "Find your perfect remote job",
+    "linkExpired": "Link expired, please try again.",
+    "checkEmail": "✅ Check your email for a login link!",
+    "resendIn": "⏳ Resend in {seconds}s",
+    "resendLink": "Resend link",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "sendMagicLink": "Send Magic Link",
+    "sending": "Sending...",
+    "sendFailed": "Failed to send. Please try again."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "jobs": "Jobs",
+    "settings": "Settings",
+    "billing": "Billing",
+    "jobDetail": "Job Detail",
+    "onboarding": "Onboarding",
+    "openMenu": "Open menu",
+    "logout": "Logout"
+  },
+  "onboarding": {
+    "heading": "Welcome! Let's set up your profile",
+    "step": "Step 1 of 1",
+    "skillsLabel": "Your Skills *",
+    "skillsPlaceholder": "Type a skill and press Enter...",
+    "popular": "Popular:",
+    "experienceLabel": "Years of Experience *",
+    "rolesLabel": "Preferred Roles *",
+    "rolesPlaceholder": "Type a role and press Enter...",
+    "somethingWrong": "Something went wrong. Please try again.",
+    "getStarted": "Get Started",
+    "saving": "Saving...",
+    "careerProfileHeading": "Boost your matches (optional)",
+    "careerProfileDescription": "Upload your resume or connect GitHub to auto-fill skills and experience."
+  },
+  "profile": {
+    "heading": "Profile Settings",
+    "skillsLabel": "Your Skills *",
+    "skillsPlaceholder": "Type a skill and press Enter...",
+    "experienceLabel": "Years of Experience *",
+    "rolesLabel": "Preferred Roles *",
+    "rolesPlaceholder": "Type a role and press Enter...",
+    "rescoreWarning": "⚠️ Saving will trigger re-scoring of all your jobs (may take a few minutes).",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "updated": "Profile updated. Re-scoring started.",
+    "error": "Something went wrong. Please try again.",
+    "careerProfileHeading": "Career profile",
+    "careerProfileDescription": "Re-upload your resume or reconnect GitHub to refresh your career profile."
+  },
+  "resume": {
+    "uploadButton": "Upload Resume",
+    "uploading": "Uploading...",
+    "uploaded": "Uploaded {fileName}. Parsing in the background.",
+    "uploadFailed": "Failed to upload resume. Please try again.",
+    "parsing": "Parsing your resume...",
+    "takingLonger": "This is taking longer than expected — check back soon.",
+    "parseFailed": "We couldn't parse your resume automatically. You can still add your skills manually above.",
+    "parsedHeading": "✓ Parsed",
+    "yearsOfExperience": "{years} years of experience",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "github": {
+    "usernamePlaceholder": "GitHub username",
+    "connectButton": "Connect",
+    "connecting": "Connecting...",
+    "connected": "Connected",
+    "connectFailed": "Failed to connect GitHub. Please try again.",
+    "parsing": "Fetching your GitHub profile...",
+    "takingLonger": "This is taking longer than expected — check back soon.",
+    "parsedLanguages": "Top languages found: {languages}",
+    "noReposFound": "No public repositories found for this account.",
+    "parseFailed": "Couldn't fetch your GitHub profile. Check the username and try again."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "recommendedJobsHeading": "Recommended Jobs",
+    "viewAllJobs": "View all jobs",
+    "noJobsTitle": "No recommendations yet",
+    "noJobsDescription": "We're matching jobs to your profile. Check back soon.",
+    "failedToLoad": "Failed to load recommended jobs",
+    "skillGapHeading": "Skill Gap",
+    "targetRoleLabel": "Target role",
+    "targetRolePlaceholder": "e.g. Backend Engineer",
+    "matchLabel": "{percent}% match",
+    "missingSkillsLabel": "Skills to work on:",
+    "noGapTitle": "Great fit!",
+    "noGapDescription": "You already cover every skill we see for this role.",
+    "noSkillDataDescription": "We don't have enough job postings for this role yet to determine required skills.",
+    "lowConfidenceNotice": "Not enough job data for this role yet — this analysis may be inaccurate.",
+    "failedToLoadSkillGap": "Failed to load skill gap analysis"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "loadMore": "Load More",
+    "loading": "Loading...",
+    "failedToLoad": "Failed to load jobs",
+    "aiAnalyzingTitle": "AI is analyzing",
+    "aiAnalyzingDescription": "We're matching jobs to your profile.",
+    "noJobsTitle": "No jobs yet",
+    "noJobsDescription": "We're fetching remote jobs. Check back soon.",
+    "scoringBanner": "⏳ AI is analyzing jobs for you...",
+    "viaHimalayas": "via Himalayas ↗",
+    "todayLabel": "today",
+    "dayAgo": "{count}d ago",
+    "filters": {
+      "decisionLabel": "Decision",
+      "all": "All",
+      "apply": "Apply",
+      "maybe": "Maybe",
+      "skip": "Skip",
+      "minScoreLabel": "Min score: {score}"
+    },
+    "sort": {
+      "score": "Score",
+      "date": "Date"
+    }
+  },
+  "jobDetail": {
+    "backToJobs": "Back to Jobs",
+    "notFound": "Job not found",
+    "postedOn": "Posted {date}",
+    "applyOnSource": "View original posting ↗",
+    "applyAriaLabel": "View original posting (opens in new tab)",
+    "remoteYes": "Remote",
+    "remoteNo": "On-site",
+    "analysisInProgress": "⏳ Analysis in progress...",
+    "outOf100": "/ 100",
+    "strengths": "Strengths:",
+    "skillGaps": "Skill Gaps:",
+    "breakdown": "Breakdown: LLM {llmScore} · Embedding {embeddingScore} · Rules {ruleScore}"
+  },
+  "decision": {
+    "APPLY": "APPLY",
+    "MAYBE": "MAYBE",
+    "SKIP": "SKIP"
+  },
+  "billing": {
+    "settingsTitle": "Billing",
+    "currentPlan": "Current Plan:",
+    "renews": "Renews: {date}",
+    "manageSubscription": "Manage Subscription",
+    "opening": "Opening...",
+    "portalFailed": "Failed to open billing portal.",
+    "unlimitedScoring": "Unlimited AI scoring",
+    "usageToday": "Usage today: {used} / {limit} scores",
+    "upgrade": "Upgrade to Pro — $19/mo",
+    "redirecting": "Redirecting...",
+    "checkoutFailed": "Failed to start checkout. Please try again.",
+    "planFree": "Free",
+    "planPro": "Pro",
+    "orderHistoryTitle": "Order History",
+    "noOrders": "No orders yet.",
+    "orderDefaultDescription": "Subscription payment",
+    "viewInvoice": "View invoice ↗",
+    "orderStatus": {
+      "PAID": "Paid",
+      "OPEN": "Open",
+      "VOID": "Void",
+      "UNCOLLECTIBLE": "Failed"
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "subtitle": "Find your perfect remote job with AI-powered matching.",
+    "free": "Free",
+    "pro": "Pro",
+    "aiScoring": "AI Scoring",
+    "aiScoringFree": "10/day",
+    "aiScoringPro": "Unlimited",
+    "jobListings": "Job Listings",
+    "emailNotifications": "Email Notifications",
+    "price": "Price",
+    "priceFree": "$0",
+    "pricePro": "$19/mo",
+    "signInToUpgrade": "Sign in to Upgrade"
+  }
+}

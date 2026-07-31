@@ -1,0 +1,33 @@
+{
+  "name": "@ai-job-market-intelligence/ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./embeddings": "./src/embeddings/index.ts",
+    "./prompts": "./src/prompts/index.ts",
+    "./scoring": "./src/scoring/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@ai-job-market-intelligence/shared": "workspace:*",
+    "@octokit/rest": "^22.0.1",
+    "openai": "^7.0.0",
+    "pdf-parse": "^2.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@ai-job-market-intelligence/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/client.ts",
+  "types": "./src/client.ts",
+  "exports": {
+    ".": "./src/client.ts"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@ai-job-market-intelligence/shared": "workspace:*",
+    "@prisma/client": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "prisma": "^6.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

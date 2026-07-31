@@ -1,0 +1,393 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ─── 枚举 ─────────────────────────────────────────────────
+
+enum JobSource {
+  REMOTEOK
+  GREENHOUSE
+  LEVER
+  ASHBY
+  HIMALAYAS
+  // V2+: MUST NOT add LINKEDIN / INDEED / GLASSDOOR
+}
+
+enum SalaryPeriod {
+  HOURLY
+  MONTHLY
+  ANNUAL
+}
+
+enum JobStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum AtsSource {
+  GREENHOUSE
+  LEVER
+  ASHBY
+}
+
+enum AtsCompanyStatus {
+  PENDING_VALIDATION
+  ACTIVE
+  INACTIVE
+}
+
+enum JobDecision {
+  APPLY
+  MAYBE
+  SKIP
+}
+
+enum NotificationChannel {
+  EMAIL
+  // Phase 2: TELEGRAM, WEBHOOK
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum PlanTier {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+// null = never uploaded/linked (distinct from FAILED). PENDING is set
+// synchronously by the POST/PUT route before profile_parse is even
+// enqueued, so the frontend can show a "processing" state immediately.
+enum ParseStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// Mirrors Stripe's own Invoice.status values.
+enum OrderStatus {
+  PAID
+  OPEN
+  VOID
+  UNCOLLECTIBLE
+}
+
+// ─── Auth.js 必需表 ───────────────────────────────────────
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  emailVerified       DateTime? @map("email_verified")
+  onboardingCompleted Boolean   @default(false) @map("onboarding_completed")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  profile       UserProfile?
+  careerProfile CareerProfile?
+  subscription  Subscription?
+  usageDaily    UsageDaily[]
+  jobScores     JobScore[]
+  notifications Notification[]
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── 用户画像 ─────────────────────────────────────────────
+
+model UserProfile {
+  id               String                       @id @default(cuid())
+  userId           String                       @unique @map("user_id")
+  skills           String[]
+  experienceYears  Int                          @default(0) @map("experience_years")
+  preferredRoles   String[]                     @map("preferred_roles")
+  profileEmbedding Unsupported("vector(2048)")? @map("profile_embedding")
+  updatedAt        DateTime                     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// CareerProfile holds the raw structured output from Resume/GitHub parsing,
+// kept separate from UserProfile (the merged skill set used for scoring) so
+// users can review/re-parse without losing their manually entered profile.
+model CareerProfile {
+  id                    String       @id @default(cuid())
+  userId                String       @unique @map("user_id")
+  resumeSkills          String[]     @map("resume_skills")
+  resumeExperienceYears Int?         @map("resume_experience_years")
+  resumeSummary         String?      @db.Text @map("resume_summary")
+  // Split from a single shared parsedAt so a resume re-upload and a GitHub
+  // re-link don't clobber each other's parse state.
+  resumeParseStatus     ParseStatus? @map("resume_parse_status")
+  resumeParsedAt        DateTime?    @map("resume_parsed_at")
+  githubUsername        String?      @map("github_username")
+  githubLanguages       Json?        @map("github_languages")
+  githubSummary         String?      @db.Text @map("github_summary")
+  githubParseStatus     ParseStatus? @map("github_parse_status")
+  githubParsedAt        DateTime?    @map("github_parsed_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("career_profiles")
+}
+
+// ─── 公司（jobs.company 从纯字符串升级为实体） ────────────
+
+model Company {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  jobs Job[]
+
+  @@map("companies")
+}
+
+// ─── 职位（平台级） ───────────────────────────────────────
+
+model Job {
+  id               String        @id @default(cuid())
+  externalId       String        @map("external_id")
+  source           JobSource
+  companyId        String?       @map("company_id")
+  title            String
+  company          String
+  role             String?
+  level            String?
+  salaryMin        Int?          @map("salary_min")
+  salaryMax        Int?          @map("salary_max")
+  // Only sourceStructured sources (Himalayas) set these — everything else
+  // stays null (frontend assumes annual USD).
+  salaryCurrency   String?       @map("salary_currency")
+  salaryPeriod     SalaryPeriod? @map("salary_period")
+  remote           Boolean       @default(true)
+  parseConfidence  Float?        @map("parse_confidence")
+  // true = AI Job Parsing was skipped because the source already provides
+  // structured fields natively.
+  sourceStructured Boolean       @default(false) @map("source_structured")
+  // SHA-256 fingerprint used to skip re-parsing/re-embedding unchanged
+  // postings on a later crawl.
+  contentHash      String?       @map("content_hash")
+  // Only Greenhouse/Lever/Ashby (per-company sources) can detect closure —
+  // aggregator sources never set this to CLOSED.
+  status           JobStatus     @default(ACTIVE)
+  closedAt         DateTime?     @map("closed_at")
+  alsoSeenOn       JobSource[]   @default([]) @map("also_seen_on")
+  description      String        @db.Text
+  url              String
+  location         String        @default("Remote")
+  tags             String[]
+  postedAt         DateTime?     @map("posted_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  companyRef    Company?        @relation(fields: [companyId], references: [id])
+  embedding     JobEmbedding?
+  scores        JobScore[]
+  notifications Notification[]
+
+  @@unique([source, externalId])
+  @@index([createdAt(sort: Desc)])
+  @@index([postedAt(sort: Desc)])
+  @@index([role])
+  @@index([status])
+  @@map("jobs")
+}
+
+// Company Discovery results, validated against the ATS's own official API
+// before being marked ACTIVE. Replaces the old
+// GREENHOUSE_COMPANY_SLUGS/LEVER_COMPANY_SLUGS/ASHBY_COMPANY_SLUGS static
+// whitelist env vars — ingestion_collect reads ACTIVE rows from here.
+model AtsCompany {
+  id                  String           @id @default(cuid())
+  slug                String
+  source              AtsSource
+  companyName         String?          @map("company_name")
+  status              AtsCompanyStatus @default(PENDING_VALIDATION)
+  cadenceBucket       Int              @map("cadence_bucket")
+  consecutiveFailures Int              @default(0) @map("consecutive_failures")
+  discoveredAt        DateTime         @default(now()) @map("discovered_at")
+  lastCheckedAt       DateTime?        @map("last_checked_at")
+  lastSuccessAt       DateTime?        @map("last_success_at")
+
+  @@unique([source, slug])
+  @@index([source, status, cadenceBucket])
+  @@map("ats_companies")
+}
+
+model JobEmbedding {
+  id        String                      @id @default(cuid())
+  jobId     String                      @unique @map("job_id")
+  embedding Unsupported("vector(2048)")
+  model     String                      @default("nvidia/llama-nemotron-embed-vl-1b-v2:free")
+  createdAt DateTime                    @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_embeddings")
+}
+
+// ─── 评分（用户级） ───────────────────────────────────────
+
+model JobScore {
+  id             String      @id @default(cuid())
+  jobId          String      @map("job_id")
+  userId         String      @map("user_id")
+  score          Int
+  decision       JobDecision
+  reasoning      String      @db.Text
+  strengths      String[]    @default([]) @map("strengths")
+  skillGap       String[]    @default([]) @map("skill_gap")
+  llmScore       Float       @map("llm_score")
+  embeddingScore Float       @map("embedding_score")
+  ruleScore      Float       @map("rule_score")
+  scoringVersion String      @default("v2") @map("scoring_version")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([userId, score(sort: Desc)])
+  @@index([userId, decision])
+  @@map("job_scores")
+}
+
+// ─── 通知 ─────────────────────────────────────────────────
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String              @map("user_id")
+  jobId     String              @map("job_id")
+  channel   NotificationChannel
+  status    NotificationStatus  @default(PENDING)
+  sentAt    DateTime?           @map("sent_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId, channel])
+  @@index([status])
+  @@map("notifications")
+}
+
+// ─── 订阅（B2C，绑 User） ─────────────────────────────────
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique @map("user_id")
+  plan                 PlanTier           @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId     String?            @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?            @unique @map("stripe_subscription_id")
+  stripePriceId        String?            @map("stripe_price_id")
+  currentPeriodEnd     DateTime?          @map("current_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// 🆕 Order history — one row per Stripe invoice.payment_succeeded webhook
+// event, shown on /settings/billing. Populated by the Stripe webhook handler,
+// not fetched live from Stripe on page load (keeps the billing page fast and
+// working even if Stripe is briefly unreachable).
+model Order {
+  id              String      @id @default(cuid())
+  userId          String      @map("user_id")
+  stripeInvoiceId String      @unique @map("stripe_invoice_id")
+  amount          Int         // smallest currency unit (cents for USD), matches Stripe's own amount_paid
+  currency        String
+  status          OrderStatus
+  description     String?
+  invoiceUrl      String?     @map("invoice_url")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+model UsageDaily {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  date       DateTime @db.Date
+  scoreCount Int      @default(0) @map("score_count")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("usage_daily")
+}
+
+// ─── Phase 2+ 预留（B2B pivot 时才考虑，MVP 不 migration） ───
+//
+// model Tenant { ... }
+// model Membership { ... }

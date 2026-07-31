@@ -1,0 +1,78 @@
+import type { JobDecision } from '@ai-job-market-intelligence/shared';
+import { computeEmbeddingScore } from '../embeddings/similarity';
+import type { JobInput, ProfileInput } from '../types';
+import { computeRuleScore } from './rule-score';
+import { computeLLMScore } from './llm-score';
+import { toDecision } from './decision';
+
+export interface ScoringResult {
+  score: number;
+  decision: JobDecision;
+  reasoning: string;
+  strengths: string[];
+  skillGap: string[];
+  llmScore: number;
+  embeddingScore: number;
+  ruleScore: number;
+  scoringVersion: 'v2';
+}
+
+// Go straight to SKIP without calling the LLM when both embedding and rule
+// scores are low (saves cost)
+const EMBEDDING_SKIP_THRESHOLD = 20;
+const RULE_SKIP_THRESHOLD = 30;
+
+export async function scoreJob(
+  profile: ProfileInput,
+  job: JobInput,
+  embeddings: { profile: number[]; job: number[] },
+): Promise<ScoringResult> {
+  const embeddingScore = computeEmbeddingScore(embeddings.profile, embeddings.job);
+  const ruleScore = computeRuleScore(profile, job);
+
+  if (embeddingScore < EMBEDDING_SKIP_THRESHOLD && ruleScore < RULE_SKIP_THRESHOLD) {
+    return {
+      score: Math.round(0.4 * embeddingScore + 0.6 * ruleScore),
+      decision: 'SKIP',
+      reasoning: 'Low semantic and rule-based match. Skills and experience do not align with this role.',
+      strengths: [],
+      skillGap: [],
+      llmScore: 0,
+      embeddingScore,
+      ruleScore,
+      scoringVersion: 'v2',
+    };
+  }
+
+  const llmResult = await computeLLMScore(profile, job);
+
+  if (!llmResult) {
+    // Fall back to rule_score when the LLM fails entirely
+    const finalScore = Math.round(0.6 * ruleScore + 0.4 * embeddingScore);
+    return {
+      score: finalScore,
+      decision: toDecision(finalScore),
+      reasoning: 'AI analysis temporarily unavailable. Score based on skill and experience matching.',
+      strengths: [],
+      skillGap: [],
+      llmScore: ruleScore,
+      embeddingScore,
+      ruleScore,
+      scoringVersion: 'v2',
+    };
+  }
+
+  const finalScore = Math.round(0.4 * llmResult.score + 0.4 * embeddingScore + 0.2 * ruleScore);
+
+  return {
+    score: finalScore,
+    decision: toDecision(finalScore),
+    reasoning: llmResult.reasoning,
+    strengths: llmResult.strengths,
+    skillGap: llmResult.skillGap,
+    llmScore: llmResult.score,
+    embeddingScore,
+    ruleScore,
+    scoringVersion: 'v2',
+  };
+}
