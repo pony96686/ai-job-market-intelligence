@@ -1,5 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  // Turborepo 2.x defaults to "strict": only env vars explicitly declared in
+  // a task's `env`/`globalEnv` list reach that task's child process, everything
+  // else gets silently stripped — even if it's set on the actual OS process
+  // running `turbo` (e.g. GitHub Actions' job-level `env:` block, or a local
+  // .env file another tool loaded). This monorepo doesn't need per-task env
+  // allowlisting for cache correctness at its current size, so "loose" (pass
+  // through the full parent environment, same as running the command
+  // directly without turbo) matches what every task actually expects.
+  "envMode": "loose",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

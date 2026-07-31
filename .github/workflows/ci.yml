@@ -100,9 +100,6 @@ jobs:
       - name: Run E2E tests
         env:
           BASE_URL: ${{ secrets.STAGING_URL }}
-        # `if:` can't read the secrets context directly (GitHub Actions
-        # rejects it at parse time), so the "skip until STAGING_URL exists"
-        # check has to happen here in shell instead of in a job/step `if:`.
         run: |
           if [ -z "$BASE_URL" ]; then
             echo "STAGING_URL not configured yet — skipping E2E tests."
