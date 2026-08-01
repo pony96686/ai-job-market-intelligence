@@ -31,6 +31,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     salaryCurrency: job.salaryCurrency,
     salaryPeriod: job.salaryPeriod,
     remote: job.remote,
+    eligibleRegions: job.eligibleRegions,
     parseConfidence: job.parseConfidence,
     status: job.status,
     postedAt: job.postedAt?.toISOString() ?? null,

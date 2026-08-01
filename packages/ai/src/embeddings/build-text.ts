@@ -2,7 +2,12 @@ import type { JobInput, ProfileInput } from '../types';
 
 const JOB_DESCRIPTION_TEXT_LIMIT = 2000;
 
-export function buildJobText(job: JobInput): string {
+// Narrowed to just the fields actually used — region data plays no part in
+// the embedding text, and requiring the full JobInput would force every
+// caller to fabricate an eligibleRegions value it doesn't have yet.
+export function buildJobText(
+  job: Pick<JobInput, 'title' | 'company' | 'tags' | 'description'>,
+): string {
   return [
     `Title: ${job.title}`,
     `Company: ${job.company}`,
@@ -11,7 +16,9 @@ export function buildJobText(job: JobInput): string {
   ].join('\n');
 }
 
-export function buildProfileText(profile: ProfileInput): string {
+export function buildProfileText(
+  profile: Pick<ProfileInput, 'skills' | 'experienceYears' | 'preferredRoles'>,
+): string {
   return [
     `Skills: ${profile.skills.join(', ')}`,
     `Experience: ${profile.experienceYears} years`,

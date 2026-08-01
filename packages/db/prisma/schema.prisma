@@ -49,6 +49,22 @@ enum JobDecision {
   SKIP
 }
 
+// Job-side only — AI Job Parsing's coarse-bucket output for a posting's
+// region restriction (Job.eligibleRegions; empty = no explicit restriction
+// found, treated as globally open, not "matches nothing"). Users don't pick
+// a bucket directly; UserProfile.preferredCountries stores their actual ISO
+// 3166-1 country codes, mapped to a bucket at scoring time via
+// @ai-job-market-intelligence/shared/regions, see ai-scoring.md §4 R4.
+enum RegionBucket {
+  US
+  EU
+  UK
+  APAC
+  LATAM
+  REMOTE_GLOBAL
+  OTHER
+}
+
 enum NotificationChannel {
   EMAIL
   // Phase 2: TELEGRAM, WEBHOOK
@@ -154,13 +170,21 @@ model VerificationToken {
 // ─── 用户画像 ─────────────────────────────────────────────
 
 model UserProfile {
-  id               String                       @id @default(cuid())
-  userId           String                       @unique @map("user_id")
-  skills           String[]
-  experienceYears  Int                          @default(0) @map("experience_years")
-  preferredRoles   String[]                     @map("preferred_roles")
-  profileEmbedding Unsupported("vector(2048)")? @map("profile_embedding")
-  updatedAt        DateTime                     @updatedAt @map("updated_at")
+  id                 String                       @id @default(cuid())
+  userId             String                       @unique @map("user_id")
+  skills             String[]
+  experienceYears    Int                          @default(0) @map("experience_years")
+  preferredRoles     String[]                     @map("preferred_roles")
+  // ISO 3166-1 alpha-2 codes, e.g. ["CN", "VN"] — empty = no region
+  // preference. Mapped to a RegionBucket at scoring time, see the
+  // RegionBucket enum comment above.
+  preferredCountries String[]                     @default([]) @map("preferred_countries")
+  // Expected minimum annual salary (USD), no currency conversion. null = no
+  // salary preference. Compared against a job's normalized annual salary at
+  // scoring time as a rule_score deduction, see ai-scoring.md §4 R5.
+  expectedSalaryMin  Int?                         @map("expected_salary_min")
+  profileEmbedding   Unsupported("vector(2048)")? @map("profile_embedding")
+  updatedAt          DateTime                     @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -238,6 +262,9 @@ model Job {
   description      String        @db.Text
   url              String
   location         String        @default("Remote")
+  // AI Job Parsing's extracted region restriction — empty = no explicit
+  // restriction found (globally open), see job-ingestion.md §5.1.
+  eligibleRegions  RegionBucket[] @default([]) @map("eligible_regions")
   tags             String[]
   postedAt         DateTime?     @map("posted_at")
   createdAt        DateTime      @default(now()) @map("created_at")

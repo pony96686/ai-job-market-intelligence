@@ -27,6 +27,7 @@ describe('parseJobFields', () => {
               salaryMin: 120_000,
               salaryMax: 160_000,
               remote: true,
+              eligibleRegions: ['US'],
               confidence: 0.9,
             }),
           },
@@ -43,6 +44,7 @@ describe('parseJobFields', () => {
     expect(result.role).toBe('Backend Engineer');
     expect(result.level).toBe('Senior');
     expect(result.skills).toEqual(['node.js', 'typescript']);
+    expect(result.eligibleRegions).toEqual(['US']);
     expect(result.confidence).toBe(0.9);
   });
 
@@ -59,5 +61,6 @@ describe('parseJobFields', () => {
     expect(result.confidence).toBe(0);
     expect(result.role).toBe('');
     expect(result.skills).toEqual([]);
+    expect(result.eligibleRegions).toEqual([]);
   });
 });

@@ -5,7 +5,12 @@ import {
   findSimilarJobs,
   recordAlsoSeenOn,
 } from '@ai-job-market-intelligence/db';
-import { parseJobFields, generateEmbedding, buildJobText, buildStructuredJobFields } from '@ai-job-market-intelligence/ai';
+import {
+  parseJobFields,
+  generateEmbedding,
+  buildJobText,
+  buildStructuredJobFields,
+} from '@ai-job-market-intelligence/ai';
 import { computeContentHash } from '@ai-job-market-intelligence/shared/ingestion';
 import {
   getScoringMatchQueue,
@@ -51,7 +56,12 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
     ? buildStructuredJobFields(normalized)
     : await parseJobFields({ title, description: normalized.description, tags: normalized.tags });
 
-  const embeddingText = buildJobText({ title, company, tags: normalized.tags, description: normalized.description });
+  const embeddingText = buildJobText({
+    title,
+    company,
+    tags: normalized.tags,
+    description: normalized.description,
+  });
   const embedding = await generateEmbedding(embeddingText);
 
   if (!existing) {
@@ -89,6 +99,7 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
       salaryCurrency: normalized.salaryCurrency ?? null,
       salaryPeriod: normalized.salaryPeriod ?? null,
       remote: parsed.remote,
+      eligibleRegions: parsed.eligibleRegions,
       parseConfidence: parsed.confidence,
       sourceStructured: normalized.sourceStructured ?? false,
       contentHash,
@@ -107,6 +118,7 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
       salaryMax: parsed.salaryMax ?? normalized.salaryMax ?? null,
       salaryCurrency: normalized.salaryCurrency ?? null,
       salaryPeriod: normalized.salaryPeriod ?? null,
+      eligibleRegions: parsed.eligibleRegions,
       parseConfidence: parsed.confidence,
       contentHash,
       description: normalized.description,
@@ -117,7 +129,11 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
     },
   });
 
-  await upsertJobEmbedding(saved.id, embedding, process.env.EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODEL);
+  await upsertJobEmbedding(
+    saved.id,
+    embedding,
+    process.env.EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODEL,
+  );
 
   logger.info({
     event: 'ingestion_parse_complete',

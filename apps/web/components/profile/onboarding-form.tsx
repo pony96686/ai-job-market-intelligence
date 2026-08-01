@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { useRouter } from '@/i18n/navigation';
 import { createZodErrorMap } from '@/lib/zod-error-map';
 import { TagInput } from './tag-input';
+import { CountrySelect } from './country-select';
+import { SalaryInput } from './salary-input';
 import { updateProfile } from '@/lib/api/user';
 
 const POPULAR_SKILLS = ['Python', 'AWS', 'Docker', 'Kubernetes'];
@@ -34,7 +36,13 @@ export function OnboardingForm() {
       async: false,
       errorMap: createZodErrorMap(tValidation),
     }),
-    defaultValues: { skills: [], experienceYears: 0, preferredRoles: [] },
+    defaultValues: {
+      skills: [],
+      experienceYears: 0,
+      preferredRoles: [],
+      preferredCountries: [],
+      expectedSalaryMin: null,
+    },
   });
 
   const mutation = useMutation({
@@ -116,6 +124,40 @@ export function OnboardingForm() {
         />
         {errors.preferredRoles && (
           <p className="text-sm text-destructive">{errors.preferredRoles.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>{t('regionsLabel')}</Label>
+        <Controller
+          control={control}
+          name="preferredCountries"
+          render={({ field }) => (
+            <CountrySelect value={field.value ?? []} onChange={field.onChange} maxCountries={20} />
+          )}
+        />
+        <p className="text-xs text-muted-foreground">{t('regionsHint')}</p>
+        {errors.preferredCountries && (
+          <p className="text-sm text-destructive">{errors.preferredCountries.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="expectedSalaryMin">{t('salaryLabel')}</Label>
+        <Controller
+          control={control}
+          name="expectedSalaryMin"
+          render={({ field }) => (
+            <SalaryInput
+              value={field.value}
+              onChange={field.onChange}
+              placeholder={t('salaryPlaceholder')}
+            />
+          )}
+        />
+        <p className="text-xs text-muted-foreground">{t('salaryHint')}</p>
+        {errors.expectedSalaryMin && (
+          <p className="text-sm text-destructive">{errors.expectedSalaryMin.message}</p>
         )}
       </div>
 

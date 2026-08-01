@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildStructuredJobFields, mapSeniority, extractTagsAsSkills } from '../structured-job-fields';
+import {
+  buildStructuredJobFields,
+  mapSeniority,
+  extractTagsAsSkills,
+} from '../structured-job-fields';
 import type { NormalizedJob } from '@ai-job-market-intelligence/shared/ingestion';
 
 const baseNormalized: NormalizedJob = {
@@ -33,7 +37,10 @@ describe('mapSeniority', () => {
 
 describe('extractTagsAsSkills', () => {
   it('lowercases, trims and deduplicates tags', () => {
-    expect(extractTagsAsSkills(['Node.js', 'TypeScript', 'node.js', ' '])).toEqual(['node.js', 'typescript']);
+    expect(extractTagsAsSkills(['Node.js', 'TypeScript', 'node.js', ' '])).toEqual([
+      'node.js',
+      'typescript',
+    ]);
   });
 });
 
@@ -46,6 +53,7 @@ describe('buildStructuredJobFields', () => {
     expect(result.salaryMin).toBe(140_000);
     expect(result.salaryMax).toBe(180_000);
     expect(result.remote).toBe(true);
+    expect(result.eligibleRegions).toEqual([]);
     expect(result.confidence).toBe(1.0);
   });
 });
