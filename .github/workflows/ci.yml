@@ -50,7 +50,10 @@ jobs:
       DATABASE_URL: postgresql://copilot:copilot@localhost:5432/copilot_test
       REDIS_URL: redis://localhost:6379
       EMAIL_FROM: test@example.com
-      AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+      # Fixed value, not a real secret — CI runs against an ephemeral test DB, and
+      # Dependabot-triggered pull_request runs don't get repo Actions secrets, which
+      # broke e2e's MissingSecret check. Any non-empty string satisfies Auth.js here.
+      AUTH_SECRET: ci-test-secret-not-for-production-use
       OPENROUTER_API_KEY: ${{ secrets.CI_OPENROUTER_API_KEY }}
       RESEND_API_KEY: ${{ secrets.CI_RESEND_API_KEY }}
       STRIPE_SECRET_KEY: ${{ secrets.CI_STRIPE_SECRET_KEY }}
@@ -104,7 +107,7 @@ jobs:
       REDIS_URL: redis://localhost:6379
       EMAIL_FROM: test@example.com
       ENABLE_TEST_ROUTES: 'true'
-      AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+      AUTH_SECRET: ci-test-secret-not-for-production-use
       AUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       RESEND_API_KEY: ${{ secrets.CI_RESEND_API_KEY }}
