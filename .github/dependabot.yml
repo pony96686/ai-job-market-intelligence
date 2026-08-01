@@ -8,6 +8,27 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+    ignore:
+      # Core runtime deps where a major bump either has real breaking changes
+      # or is peer-coupled with another package's version (next<->react) —
+      # these need a deliberate manual upgrade, not an unattended Dependabot PR.
+      # Minor/patch bumps are unaffected.
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pino"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -18,3 +39,9 @@ updates:
     directory: "/apps/worker"
     schedule:
       interval: "weekly"
+    ignore:
+      # Only track Node's even-numbered LTS releases (20/22/24) for the
+      # production base image — odd-numbered releases (e.g. 25) are Current,
+      # not LTS, with a ~6 month support window.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
