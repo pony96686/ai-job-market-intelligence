@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createZodErrorMap } from '@/lib/zod-error-map';
 import { TagInput } from './tag-input';
+import { CountrySelect } from './country-select';
+import { SalaryInput } from './salary-input';
 import { fetchMe, updateProfile } from '@/lib/api/user';
 
 export function ProfileForm() {
@@ -31,7 +33,13 @@ export function ProfileForm() {
       async: false,
       errorMap: createZodErrorMap(tValidation),
     }),
-    defaultValues: { skills: [], experienceYears: 0, preferredRoles: [] },
+    defaultValues: {
+      skills: [],
+      experienceYears: 0,
+      preferredRoles: [],
+      preferredCountries: [],
+      expectedSalaryMin: null,
+    },
   });
 
   useEffect(() => {
@@ -40,6 +48,8 @@ export function ProfileForm() {
         skills: me.profile.skills,
         experienceYears: me.profile.experienceYears,
         preferredRoles: me.profile.preferredRoles,
+        preferredCountries: me.profile.preferredCountries,
+        expectedSalaryMin: me.profile.expectedSalaryMin,
       });
     }
   }, [me, reset]);
@@ -103,6 +113,40 @@ export function ProfileForm() {
         />
         {errors.preferredRoles && (
           <p className="text-sm text-destructive">{errors.preferredRoles.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>{t('regionsLabel')}</Label>
+        <Controller
+          control={control}
+          name="preferredCountries"
+          render={({ field }) => (
+            <CountrySelect value={field.value ?? []} onChange={field.onChange} maxCountries={20} />
+          )}
+        />
+        <p className="text-xs text-muted-foreground">{t('regionsHint')}</p>
+        {errors.preferredCountries && (
+          <p className="text-sm text-destructive">{errors.preferredCountries.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="expectedSalaryMin">{t('salaryLabel')}</Label>
+        <Controller
+          control={control}
+          name="expectedSalaryMin"
+          render={({ field }) => (
+            <SalaryInput
+              value={field.value}
+              onChange={field.onChange}
+              placeholder={t('salaryPlaceholder')}
+            />
+          )}
+        />
+        <p className="text-xs text-muted-foreground">{t('salaryHint')}</p>
+        {errors.expectedSalaryMin && (
+          <p className="text-sm text-destructive">{errors.expectedSalaryMin.message}</p>
         )}
       </div>
 

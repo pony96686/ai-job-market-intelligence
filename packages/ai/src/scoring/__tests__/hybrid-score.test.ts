@@ -9,17 +9,24 @@ vi.mock('openai', () => ({
 }));
 
 import { scoreJob } from '../hybrid-score';
+import type { RegionBucket } from '@ai-job-market-intelligence/shared';
 
 const profile = {
   skills: ['Node.js', 'TypeScript'],
   experienceYears: 6,
   preferredRoles: ['Backend Engineer'],
+  preferredCountries: [],
+  expectedSalaryMin: null,
 };
 const job = {
   title: 'Senior Backend Engineer',
   company: 'Acme',
   tags: ['node', 'typescript'],
   description: 'We need someone strong in Node.js and TypeScript.',
+  eligibleRegions: [],
+  salaryMin: null,
+  salaryMax: null,
+  salaryPeriod: null,
 };
 
 const similarEmbedding = new Array(1536).fill(1);
@@ -32,11 +39,46 @@ beforeEach(() => {
 
 describe('scoreJob', () => {
   it('skips the LLM call when embedding and rule scores are both low', async () => {
-    const lowProfile = { skills: [], experienceYears: 100, preferredRoles: [] };
+    const lowProfile = {
+      skills: [],
+      experienceYears: 100,
+      preferredRoles: [],
+      preferredCountries: [],
+      expectedSalaryMin: null,
+    };
     const result = await scoreJob(lowProfile, job, { profile: lowA, job: lowB });
 
     expect(result.decision).toBe('SKIP');
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('deducts the region mismatch penalty from rule_score but still computes embedding/LLM (ranking-only, not a veto)', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              score: 85,
+              reasoning: 'Strong match.',
+              strengths: [],
+              skill_gap: [],
+            }),
+          },
+        },
+      ],
+    });
+    // US -> US bucket, see country-region-map.ts
+    const regionProfile = { ...profile, preferredCountries: ['US'] };
+    const restrictedJob = { ...job, eligibleRegions: ['EU'] as RegionBucket[] };
+
+    const result = await scoreJob(regionProfile, restrictedJob, {
+      profile: similarEmbedding,
+      job: similarEmbedding,
+    });
+
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(result.decision).not.toBe('SKIP');
+    expect(result.ruleScore).toBe(80); // 100 (full match) - 20 region mismatch penalty
   });
 
   it('computes the weighted score using the LLM result when scores are high enough', async () => {
@@ -55,7 +97,10 @@ describe('scoreJob', () => {
       ],
     });
 
-    const result = await scoreJob(profile, job, { profile: similarEmbedding, job: similarEmbedding });
+    const result = await scoreJob(profile, job, {
+      profile: similarEmbedding,
+      job: similarEmbedding,
+    });
 
     expect(mockCreate).toHaveBeenCalledTimes(1);
     expect(result.llmScore).toBe(85);
@@ -69,7 +114,10 @@ describe('scoreJob', () => {
   it('falls back to the rule score when the LLM fails twice', async () => {
     mockCreate.mockRejectedValue(new Error('API error'));
 
-    const result = await scoreJob(profile, job, { profile: similarEmbedding, job: similarEmbedding });
+    const result = await scoreJob(profile, job, {
+      profile: similarEmbedding,
+      job: similarEmbedding,
+    });
 
     expect(mockCreate).toHaveBeenCalledTimes(2); // initial attempt + 1 retry
     expect(result.reasoning).toContain('temporarily unavailable');

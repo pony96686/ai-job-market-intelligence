@@ -1,4 +1,5 @@
 import type { JobSource, SalaryPeriod } from '../schemas/job';
+import type { RegionBucket } from '../schemas/common';
 
 export interface NormalizedJob {
   externalId: string;
@@ -39,6 +40,9 @@ export interface ParsedJobFields {
   salaryMin: number | null;
   salaryMax: number | null;
   remote: boolean;
+  // Region restriction extracted from the posting text — empty = no explicit
+  // restriction found (globally open), see job-ingestion.md §5.1.
+  eligibleRegions: RegionBucket[];
   confidence: number;
 }
 

@@ -1,3 +1,5 @@
+import type { SalaryPeriod } from '@ai-job-market-intelligence/shared';
+import { mapCountryToRegionBucket } from '@ai-job-market-intelligence/shared/regions';
 import type { JobInput, ProfileInput } from '../types';
 
 const SKILL_WEIGHT = 60;
@@ -5,6 +7,10 @@ const EXPERIENCE_CLOSE_SCORE = 25;
 const EXPERIENCE_NEAR_SCORE = 15;
 const EXPERIENCE_FAR_SCORE = 5;
 const ROLE_MATCH_SCORE = 15;
+const REGION_MISMATCH_PENALTY = 20;
+const SALARY_MISMATCH_PENALTY = 15;
+const HOURLY_HOURS_PER_YEAR = 2080;
+const MONTHS_PER_YEAR = 12;
 
 interface SeniorityRange {
   pattern: RegExp;
@@ -53,5 +59,42 @@ export function computeRuleScore(profile: ProfileInput, job: JobInput): number {
   const skillScore = matchSkillsScore(profile.skills, job);
   const expScore = experienceScore(profile.experienceYears, job.title);
   const role = roleScore(profile.preferredRoles, job.title);
-  return Math.round(skillScore + expScore + role);
+  const raw =
+    skillScore + expScore + role - regionPenalty(profile, job) - salaryPenalty(profile, job);
+  return Math.round(Math.min(100, Math.max(0, raw)));
+}
+
+// R4 region preference (ai-scoring.md §4): a ranking-only deduction, not a
+// veto — preferredCountries expresses where the user *wants* to work, not
+// where they're eligible to work, so a mismatch still gets scored normally
+// and shown, just ranked lower. The user fills in actual countries (not an
+// abstract bucket), so their countries are mapped to a RegionBucket here
+// before comparing against the job's eligibleRegions.
+export function regionPenalty(profile: ProfileInput, job: JobInput): number {
+  if (profile.preferredCountries.length === 0) return 0; // no preference, don't check
+  if (job.eligibleRegions.length === 0) return 0; // no explicit restriction, treated as globally open
+
+  const preferredBuckets = profile.preferredCountries.map(mapCountryToRegionBucket);
+  const matched = preferredBuckets.some((bucket) => job.eligibleRegions.includes(bucket));
+  return matched ? 0 : REGION_MISMATCH_PENALTY;
+}
+
+function normalizeToAnnualUSD(amount: number, period: SalaryPeriod | null): number {
+  if (period === 'HOURLY') return amount * HOURLY_HOURS_PER_YEAR;
+  if (period === 'MONTHLY') return amount * MONTHS_PER_YEAR;
+  return amount;
+}
+
+// R5 salary preference (ai-scoring.md §4): a ranking-only deduction, not a
+// veto — job salary data is incomplete (only sourceStructured provides it
+// natively; everything else is a best-effort LLM extraction), so an unknown
+// job salary is treated as "unknown", not "doesn't meet expectations".
+export function salaryPenalty(profile: ProfileInput, job: JobInput): number {
+  if (!profile.expectedSalaryMin) return 0; // no salary preference, don't check
+  if (job.salaryMin == null && job.salaryMax == null) return 0; // job salary undisclosed, don't check
+
+  // Compare against the top of the job's range, giving it the best chance to qualify.
+  const jobTop = job.salaryMax ?? job.salaryMin!;
+  const normalizedJobTop = normalizeToAnnualUSD(jobTop, job.salaryPeriod);
+  return normalizedJobTop < profile.expectedSalaryMin ? SALARY_MISMATCH_PENALTY : 0;
 }

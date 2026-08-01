@@ -1,5 +1,21 @@
 import { z } from 'zod';
 
+// Job-side only — Job.eligibleRegions is AI Job Parsing's coarse-bucket
+// output. Users don't pick a bucket directly (see UserProfile.preferredCountries
+// in user.ts); their ISO 3166-1 country codes are mapped to a bucket at
+// scoring time via @ai-job-market-intelligence/shared/regions, see
+// database-schema.md's RegionBucket section.
+export const RegionBucketSchema = z.enum([
+  'US',
+  'EU',
+  'UK',
+  'APAC',
+  'LATAM',
+  'REMOTE_GLOBAL',
+  'OTHER',
+]);
+export type RegionBucket = z.infer<typeof RegionBucketSchema>;
+
 export const PaginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),

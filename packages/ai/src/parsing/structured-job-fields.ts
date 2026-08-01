@@ -49,6 +49,9 @@ export function buildStructuredJobFields(normalized: NormalizedJob): ParsedJobFi
     salaryMin: normalized.salaryMin ?? null,
     salaryMax: normalized.salaryMax ?? null,
     remote: true,
+    // Fixed empty — none of today's sourceStructured sources natively
+    // provide a region field, see job-ingestion.md §5.4.
+    eligibleRegions: [],
     confidence: 1.0,
   };
 }

@@ -26,6 +26,8 @@ export async function GET() {
           skills: user.profile.skills,
           experienceYears: user.profile.experienceYears,
           preferredRoles: user.profile.preferredRoles,
+          preferredCountries: user.profile.preferredCountries,
+          expectedSalaryMin: user.profile.expectedSalaryMin,
           updatedAt: user.profile.updatedAt.toISOString(),
         }
       : null,

@@ -8,14 +8,21 @@ Return strict JSON matching this schema:
   "salaryMin": number | null,
   "salaryMax": number | null,
   "remote": boolean,
+  "eligibleRegions": ("US" | "EU" | "UK" | "APAC" | "LATAM" | "REMOTE_GLOBAL" | "OTHER")[],
   "confidence": number       // 0-1, your self-assessed confidence in this extraction
 }
 
-If the posting already includes structured tags or a salary range, trust those over inferring from free text. Only extract what is explicitly present or reasonably inferable. Do not invent numbers or skills that aren't supported by the text.`;
+If the posting already includes structured tags or a salary range, trust those over inferring from free text. Only extract what is explicitly present or reasonably inferable. Do not invent numbers or skills that aren't supported by the text.
+
+eligibleRegions: only include a bucket when the posting states an explicit region, timezone, or work-authorization restriction (e.g. "Must be based in the US", "EU timezone overlap required", "must have UK right to work"). A generic "Remote" or "Work from anywhere" is NOT a restriction. When no explicit restriction is stated, return an empty array — never guess or infer a restriction that isn't backed by the text.`;
 
 const JOB_DESCRIPTION_PARSE_LIMIT = 4000;
 
-export function buildJobParsingUserPrompt(title: string, description: string, tags: string[]): string {
+export function buildJobParsingUserPrompt(
+  title: string,
+  description: string,
+  tags: string[],
+): string {
   return `Title: ${title}
 Tags: ${tags.join(', ')}
 Description:

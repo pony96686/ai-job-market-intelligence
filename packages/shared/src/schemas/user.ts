@@ -1,10 +1,24 @@
 import { z } from 'zod';
+import { isValidCountryCode } from '../regions';
+
+// ISO 3166-1 alpha-2, uppercased before the validity check so 'cn'/'CN' both
+// pass — the frontend CountrySelect always stores upper-case, but this is
+// cheap insurance for any other API caller.
+const CountryCodeSchema = z
+  .string()
+  .length(2)
+  .transform((code) => code.toUpperCase())
+  .refine(isValidCountryCode, 'Invalid ISO 3166-1 country code');
 
 export const ProfileUpdateSchema = z.object({
   // Limit relaxed from 20 to 50 — a product decision, not a doc typo
   skills: z.array(z.string().min(1).max(50)).min(1).max(50),
   experienceYears: z.number().int().min(0).max(50),
   preferredRoles: z.array(z.string().min(1).max(100)).min(1).max(10),
+  // Omitted/empty = no region preference, see api-spec.md §4.2.
+  preferredCountries: z.array(CountryCodeSchema).max(20).optional(),
+  // Omitted/null = no salary preference, see api-spec.md §4.2.
+  expectedSalaryMin: z.number().int().positive().nullable().optional(),
 });
 export type ProfileUpdate = z.infer<typeof ProfileUpdateSchema>;
 
@@ -12,6 +26,8 @@ export const ProfileResponseSchema = z.object({
   skills: z.array(z.string()),
   experienceYears: z.number().int(),
   preferredRoles: z.array(z.string()),
+  preferredCountries: z.array(z.string()),
+  expectedSalaryMin: z.number().int().nullable(),
   updatedAt: z.string().datetime(),
 });
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;

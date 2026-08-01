@@ -3,10 +3,14 @@ import { getOpenRouterClient } from '../openrouter-client';
 import { JOB_PARSING_SYSTEM_PROMPT, buildJobParsingUserPrompt } from '../prompts/job-parsing';
 import type { ParsedJobFields } from '@ai-job-market-intelligence/shared/ingestion';
 
-const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
+// OpenRouter model slugs require a 'vendor/' prefix — a bare model name gets
+// rejected with a 400 (see packages/ai/src/scoring/llm-score.ts for the same
+// issue and fix).
+const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b:free';
 const PARSE_MAX_RETRIES = 2; // initial attempt + 1 retry
 
 const JobLevelSchema = z.enum(['Junior', 'Mid', 'Senior', 'Staff', 'Principal', 'Unknown']);
+const RegionBucketSchema = z.enum(['US', 'EU', 'UK', 'APAC', 'LATAM', 'REMOTE_GLOBAL', 'OTHER']);
 
 const JobParseOutputSchema = z.object({
   role: z.string().max(100),
@@ -15,6 +19,7 @@ const JobParseOutputSchema = z.object({
   salaryMin: z.number().int().nullable(),
   salaryMax: z.number().int().nullable(),
   remote: z.boolean(),
+  eligibleRegions: z.array(RegionBucketSchema).max(7),
   confidence: z.number().min(0).max(1),
 });
 
@@ -31,6 +36,7 @@ const EMPTY_RESULT: ParsedJobFields = {
   salaryMin: null,
   salaryMax: null,
   remote: false,
+  eligibleRegions: [],
   confidence: 0,
 };
 
@@ -42,7 +48,10 @@ async function callLLM(input: ParseJobFieldsInput): Promise<ParsedJobFields> {
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: JOB_PARSING_SYSTEM_PROMPT },
-      { role: 'user', content: buildJobParsingUserPrompt(input.title, input.description, input.tags) },
+      {
+        role: 'user',
+        content: buildJobParsingUserPrompt(input.title, input.description, input.tags),
+      },
     ],
   });
 
@@ -58,7 +67,8 @@ export async function parseJobFields(input: ParseJobFieldsInput): Promise<Parsed
   for (let attempt = 1; attempt <= PARSE_MAX_RETRIES; attempt++) {
     try {
       return await callLLM(input);
-    } catch {
+    } catch (error) {
+      console.error(`[parse-job-fields] attempt ${attempt}/${PARSE_MAX_RETRIES} failed:`, error);
       if (attempt === PARSE_MAX_RETRIES) return EMPTY_RESULT;
     }
   }

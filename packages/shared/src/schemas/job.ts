@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema } from './common';
+import { PaginationQuerySchema, RegionBucketSchema } from './common';
 
 export const JobDecisionSchema = z.enum(['APPLY', 'MAYBE', 'SKIP']);
 export type JobDecision = z.infer<typeof JobDecisionSchema>;
@@ -64,6 +64,7 @@ export const JobResponseSchema = z.object({
   salaryCurrency: z.string().nullable(),
   salaryPeriod: SalaryPeriodSchema.nullable(),
   remote: z.boolean(),
+  eligibleRegions: z.array(RegionBucketSchema),
   parseConfidence: z.number().min(0).max(1).nullable(),
   status: JobStatusSchema,
   postedAt: z.string().datetime().nullable(),
