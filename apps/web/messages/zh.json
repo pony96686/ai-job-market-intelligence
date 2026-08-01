@@ -126,6 +126,7 @@
   },
   "jobs": {
     "title": "职位",
+    "showingCount": "已显示 {shown} / 共 {total} 条",
     "loadMore": "加载更多",
     "loading": "加载中...",
     "failedToLoad": "加载职位失败",

@@ -14,7 +14,7 @@ test.describe('Main User Flow', () => {
 
     const scoreBadge = page.getByTestId('score-badge').first();
     await expect(scoreBadge).toBeVisible();
-    const scoreText = await scoreBadge.textContent();
+    const scoreText = await scoreBadge.getByTestId('score-value').textContent();
     expect(Number(scoreText)).toBeGreaterThan(0);
 
     await jobCards.first().click();
