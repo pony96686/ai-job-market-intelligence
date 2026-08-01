@@ -8,13 +8,31 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+    ignore:
+      # Major version bumps need a deliberate manual upgrade (breaking changes,
+      # peer-dependency coupling like next<->react or prisma<->@prisma/client,
+      # config-format changes, etc.) — never an unattended Dependabot PR.
+      # Minor/patch bumps are unaffected. To take a major bump, edit the
+      # package.json range yourself; Dependabot resumes tracking from there.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/apps/worker"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
