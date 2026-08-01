@@ -17,7 +17,7 @@
     "@ai-job-market-intelligence/shared": "workspace:*",
     "bullmq": "^5.28.1",
     "ioredis": "^5.4.1",
-    "pino": "^9.5.0",
+    "pino": "^10.3.1",
     "resend": "^6.18.1",
     "tsx": "^4.19.2"
   },
