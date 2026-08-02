@@ -1,13 +1,13 @@
 import type { Job } from 'bullmq';
-import { prisma, getJobEmbedding, getProfileEmbedding, upsertProfileEmbedding } from '@ai-job-market-intelligence/db';
-import { buildProfileText, generateEmbedding, scoreJob } from '@ai-job-market-intelligence/ai';
 import {
-  getNotifyEmailQueue,
-  NOTIFY_EMAIL_JOB_OPTS,
-  type ScoringMatchPayload,
-} from '@ai-job-market-intelligence/shared/queue';
-import { HIGH_MATCH_SCORE_THRESHOLD } from '@ai-job-market-intelligence/shared/constants';
-import { canScore, incrementUsage, canNotify } from '../billing/usage.js';
+  prisma,
+  getJobEmbedding,
+  getProfileEmbedding,
+  upsertProfileEmbedding,
+} from '@ai-job-market-intelligence/db';
+import { buildProfileText, generateEmbedding, scoreJob } from '@ai-job-market-intelligence/ai';
+import type { ScoringMatchPayload } from '@ai-job-market-intelligence/shared/queue';
+import { canScore, incrementUsage } from '../billing/usage.js';
 import { logger } from '../logger.js';
 
 export async function processScoringMatch(job: Job<ScoringMatchPayload>): Promise<void> {
@@ -37,7 +37,10 @@ export async function processScoringMatch(job: Job<ScoringMatchPayload>): Promis
     await upsertProfileEmbedding(userId, profileEmbedding);
   }
 
-  const result = await scoreJob(profile, jobRecord, { profile: profileEmbedding, job: jobEmbedding });
+  const result = await scoreJob(profile, jobRecord, {
+    profile: profileEmbedding,
+    job: jobEmbedding,
+  });
 
   const existingScore = await prisma.jobScore.findUnique({
     where: { jobId_userId: { jobId, userId } },
@@ -62,12 +65,7 @@ export async function processScoringMatch(job: Job<ScoringMatchPayload>): Promis
     traceId,
   });
 
-  // High-match notification (Pro users only)
-  if (result.decision === 'APPLY' && result.score >= HIGH_MATCH_SCORE_THRESHOLD && (await canNotify(userId))) {
-    await getNotifyEmailQueue().add(
-      'notify',
-      { jobId, userId },
-      { ...NOTIFY_EMAIL_JOB_OPTS, jobId: `notify:${jobId}:${userId}` },
-    );
-  }
+  // Instant high-match email (score >= 80 + APPLY) is retired — high-match
+  // jobs now surface via Opportunity Discovery in the next day's Career
+  // Brief instead (v2-scope.md §2 decision #2, §8 Epic 12.3).
 }

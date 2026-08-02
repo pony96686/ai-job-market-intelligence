@@ -18,7 +18,12 @@ const {
   mockRecordAlsoSeenOn: vi.fn(),
 }));
 
-const { mockParseJobFields, mockGenerateEmbedding, mockBuildJobText, mockBuildStructuredJobFields } = vi.hoisted(() => ({
+const {
+  mockParseJobFields,
+  mockGenerateEmbedding,
+  mockBuildJobText,
+  mockBuildStructuredJobFields,
+} = vi.hoisted(() => ({
   mockParseJobFields: vi.fn(),
   mockGenerateEmbedding: vi.fn(),
   mockBuildJobText: vi.fn(() => 'embedding-text'),
@@ -146,6 +151,7 @@ describe('processIngestionParse', () => {
           companyId: 'company-1',
           role: 'Backend Engineer',
           level: 'Senior',
+          skills: ['node'],
           salaryMin: 100_000,
           salaryMax: 150_000,
           remote: true,
@@ -155,7 +161,11 @@ describe('processIngestionParse', () => {
         }),
       }),
     );
-    expect(mockUpsertJobEmbedding).toHaveBeenCalledWith('job-1', [0.1, 0.2], 'text-embedding-3-small');
+    expect(mockUpsertJobEmbedding).toHaveBeenCalledWith(
+      'job-1',
+      [0.1, 0.2],
+      'text-embedding-3-small',
+    );
     expect(mockQueueAdd).toHaveBeenCalledTimes(2);
     expect(mockQueueAdd).toHaveBeenCalledWith(
       'score',
@@ -178,12 +188,20 @@ describe('processIngestionParse', () => {
     const structuredNormalized = { ...normalized, source: 'HIMALAYAS', sourceStructured: true };
     mockBuildStructuredJobFields.mockReturnValue({ ...parsedFields, confidence: 1.0 });
 
-    await processIngestionParse(makeJob({ normalized: structuredNormalized, companyId: 'company-1' }));
+    await processIngestionParse(
+      makeJob({ normalized: structuredNormalized, companyId: 'company-1' }),
+    );
 
     expect(mockParseJobFields).not.toHaveBeenCalled();
     expect(mockBuildStructuredJobFields).toHaveBeenCalledWith(structuredNormalized);
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({ create: expect.objectContaining({ parseConfidence: 1.0, sourceStructured: true }) }),
+      expect.objectContaining({
+        create: expect.objectContaining({
+          skills: ['node'],
+          parseConfidence: 1.0,
+          sourceStructured: true,
+        }),
+      }),
     );
   });
 });

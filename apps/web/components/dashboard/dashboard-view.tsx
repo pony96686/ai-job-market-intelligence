@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchMe } from '@/lib/api/user';
 import { RecommendedJobs } from './recommended-jobs';
 import { SkillGapCard } from './skill-gap-card';
+import { SkillGrowthCard } from './skill-growth-card';
+import { DailyBriefCard } from './daily-brief-card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardView() {
@@ -18,10 +20,14 @@ export function DashboardView() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <RecommendedJobs />
+        <DailyBriefCard />
         {isLoading ? (
           <Skeleton className="h-48 w-full" />
         ) : (
-          <SkillGapCard preferredRoles={me?.profile?.preferredRoles ?? []} />
+          <>
+            <SkillGapCard preferredRoles={me?.profile?.preferredRoles ?? []} />
+            <SkillGrowthCard skills={me?.profile?.skills ?? []} />
+          </>
         )}
       </div>
     </div>

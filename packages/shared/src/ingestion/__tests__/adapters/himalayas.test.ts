@@ -6,6 +6,7 @@ const validRaw = {
   title: 'Senior Backend Engineer',
   description: `<p>${'We need a backend engineer with strong Node.js experience. '.repeat(3)}</p>`,
   companyName: 'Acme Inc',
+  companySlug: 'acme-inc',
   minSalary: 140_000,
   maxSalary: 180_000,
   salaryPeriod: 'annual' as const,
@@ -64,5 +65,41 @@ describe('himalayasAdapter.normalize', () => {
     const { salaryPeriod: _period, ...rest } = validRaw;
     const result = himalayasAdapter.normalize({ ...rest, salaryPeriod: null });
     expect(result?.salaryPeriod).toBeUndefined();
+  });
+
+  // Himalayas's live API has been observed returning the literal string
+  // "name" as companyName for a subset of postings (a template-rendering
+  // bug on their side) — companySlug stays correct, so it's the fallback.
+  it('falls back to a humanized companySlug when companyName is the "name" sentinel', () => {
+    const result = himalayasAdapter.normalize({
+      ...validRaw,
+      companyName: 'name',
+      companySlug: 'micro1',
+    });
+    expect(result?.company).toBe('Micro1');
+  });
+
+  it('humanizes a hyphenated companySlug fallback', () => {
+    const result = himalayasAdapter.normalize({
+      ...validRaw,
+      companyName: 'name',
+      companySlug: 'audio-transcription-center',
+    });
+    expect(result?.company).toBe('Audio Transcription Center');
+  });
+
+  it('falls back to Unknown when both companyName is broken and companySlug is missing', () => {
+    const { companySlug: _slug, ...rest } = validRaw;
+    const result = himalayasAdapter.normalize({ ...rest, companyName: 'name' });
+    expect(result?.company).toBe('Unknown');
+  });
+
+  it('is case-insensitive when detecting the broken companyName sentinel', () => {
+    const result = himalayasAdapter.normalize({
+      ...validRaw,
+      companyName: 'Name',
+      companySlug: 'clera',
+    });
+    expect(result?.company).toBe('Clera');
   });
 });

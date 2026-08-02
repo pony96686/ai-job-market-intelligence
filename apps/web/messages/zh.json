@@ -6,7 +6,9 @@
   "common": {
     "appName": "AI Job Market Intelligence",
     "retry": "重试",
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "backToDashboard": "返回仪表盘",
+    "logIn": "登录"
   },
   "validation": {
     "fieldLabels": {
@@ -44,6 +46,8 @@
   "nav": {
     "dashboard": "仪表盘",
     "jobs": "职位",
+    "careerCoach": "职业教练",
+    "market": "技能市场",
     "settings": "设置",
     "billing": "账单",
     "jobDetail": "职位详情",
@@ -91,7 +95,16 @@
     "updated": "资料已更新，重新评分已开始。",
     "error": "出错了，请重试。",
     "careerProfileHeading": "职业画像",
-    "careerProfileDescription": "重新上传简历或重新关联 GitHub，刷新你的职业画像。"
+    "careerProfileDescription": "重新上传简历或重新关联 GitHub，刷新你的职业画像。",
+    "notificationSettingsLink": "通知设置"
+  },
+  "notifications": {
+    "heading": "通知设置",
+    "backToProfile": "返回个人资料设置",
+    "dailyBriefLabel": "每日职业简报",
+    "dailyBriefDescription": "每天收到一封邮件，包含市场亮点、新的高分机会，以及一个值得学习的技能推荐。",
+    "saved": "已保存。",
+    "saveFailed": "保存失败，请重试。"
   },
   "resume": {
     "uploadButton": "上传简历",
@@ -134,7 +147,55 @@
     "noGapDescription": "该岗位所需技能你都已具备。",
     "noSkillDataDescription": "该岗位的职位数据还不够，暂时无法判断所需技能。",
     "lowConfidenceNotice": "该岗位职位数据较少，缺口分析可能不够准确。",
-    "failedToLoadSkillGap": "加载技能缺口分析失败"
+    "failedToLoadSkillGap": "加载技能缺口分析失败",
+    "skillGrowthHeading": "你的技能在市场上的表现",
+    "skillGrowthNoData": "你的技能还没有市场数据，请稍后再来查看。",
+    "skillGrowthJobCount": "{count} 个职位",
+    "dailyBriefHeading": "你的每日职业简报",
+    "dailyBriefNoData": "第一份简报会在今晚生成，明天再来看看。",
+    "dailyBriefGrowingSkills": "增长最快的技能",
+    "dailyBriefJobCount": "{count} 个职位",
+    "dailyBriefHotCompanies": "当前招聘量最大的公司",
+    "dailyBriefActiveJobs": "{count} 个在招职位",
+    "dailyBriefRecommendedJobs": "为你发现的新高分机会",
+    "dailyBriefRecommendedSkill": "值得学习的下一个技能",
+    "dailyBriefAskCoach": "去问问职业教练"
+  },
+  "marketSkills": {
+    "title": "技能市场情报",
+    "description": "看看现在远程软件工程职位都在要求什么技能。",
+    "rankingHeading": "技能排行榜",
+    "heatmapHeading": "技能热力图",
+    "heatmapDescription": "按岗位划分的热门技能——颜色越深，说明这个技能在该岗位的职位里被提到得越多。",
+    "windowDays": "最近 {days} 天",
+    "sort": {
+      "count": "提及最多",
+      "growing": "增长最快",
+      "declining": "下降最快"
+    },
+    "accumulatingData": "数据积累中",
+    "failedToLoad": "加载技能数据失败",
+    "noDataTitle": "暂无数据",
+    "noDataDescription": "技能趋势还在计算中，请稍后再来查看。",
+    "table": {
+      "rank": "#",
+      "skill": "技能",
+      "jobCount": "职位数",
+      "growth": "增长"
+    }
+  },
+  "careerCoach": {
+    "title": "职业教练",
+    "emptyState": "问问职业方向、热门技能或薪资范围——回答基于真实职位市场数据。",
+    "placeholder": "输入你的问题...",
+    "send": "发送",
+    "sendFailed": "发送失败，请重试。",
+    "rateLimited": "AI 服务今日额度已用完，请稍后再试。",
+    "clearConversation": "清空对话",
+    "clearConfirmTitle": "确定要清空这段对话吗？",
+    "clearConfirmDescription": "这会永久删除你在职业教练里的全部对话历史，操作无法撤销。",
+    "clearCancel": "取消",
+    "clearConfirm": "清空对话"
   },
   "jobs": {
     "title": "职位",

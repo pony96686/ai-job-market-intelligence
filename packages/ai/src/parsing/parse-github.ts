@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { Octokit } from '@octokit/rest';
 import { getOpenRouterClient } from '../openrouter-client';
-import { GITHUB_SUMMARY_SYSTEM_PROMPT, buildGithubSummaryUserPrompt } from '../prompts/github-summary';
+import {
+  GITHUB_SUMMARY_SYSTEM_PROMPT,
+  buildGithubSummaryUserPrompt,
+} from '../prompts/github-summary';
+import { callWithFallback } from '../fallback';
 
 const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
 const MAX_REPOS_FOR_LANGUAGES = 15;
@@ -23,7 +27,6 @@ function getOctokit(): Octokit {
   return octokit;
 }
 
-
 async function fetchReadmeExcerpt(owner: string, repo: string): Promise<string | null> {
   try {
     const { data } = await getOctokit().rest.repos.getReadme({ owner, repo });
@@ -33,31 +36,46 @@ async function fetchReadmeExcerpt(owner: string, repo: string): Promise<string |
   }
 }
 
+async function callLLM(
+  model: string,
+  username: string,
+  repos: { name: string; description: string | null; readmeExcerpt: string | null }[],
+): Promise<string> {
+  const response = await getOpenRouterClient().chat.completions.create({
+    model,
+    temperature: 0.3,
+    max_tokens: 400,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: GITHUB_SUMMARY_SYSTEM_PROMPT },
+      { role: 'user', content: buildGithubSummaryUserPrompt(username, repos) },
+    ],
+  });
+
+  const content = response.choices[0]?.message.content;
+  if (!content) throw new Error('LLM returned empty response');
+
+  return GithubSummaryOutputSchema.parse(JSON.parse(content)).summary;
+}
+
+// Returns null when the free model (and, if configured and within budget,
+// the paid fallback per ai-scoring.md §8.5) both fail — the caller proceeds
+// without a summary rather than blocking the rest of profile parsing.
 async function summarizeRepos(
   username: string,
   repos: { name: string; description: string | null; readmeExcerpt: string | null }[],
 ): Promise<string | null> {
   if (repos.length === 0) return null;
 
-  try {
-    const response = await getOpenRouterClient().chat.completions.create({
-      model: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
-      temperature: 0.3,
-      max_tokens: 400,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: GITHUB_SUMMARY_SYSTEM_PROMPT },
-        { role: 'user', content: buildGithubSummaryUserPrompt(username, repos) },
-      ],
-    });
-
-    const content = response.choices[0]?.message.content;
-    if (!content) return null;
-
-    return GithubSummaryOutputSchema.parse(JSON.parse(content)).summary;
-  } catch {
-    return null;
-  }
+  return callWithFallback(
+    (model) => callLLM(model, username, repos),
+    {
+      primary: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
+      fallback: process.env.CHAT_MODEL_FALLBACK,
+    },
+    (model, attempt, error) =>
+      console.error(`[parse-github] attempt ${attempt} (${model}) failed:`, error),
+  );
 }
 
 // Uses only the public GitHub REST API (no OAuth) — GITHUB_TOKEN is a PAT used

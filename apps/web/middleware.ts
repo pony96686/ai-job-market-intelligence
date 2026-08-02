@@ -12,8 +12,15 @@ import { routing } from '@/i18n/routing';
 const { auth } = NextAuth(authConfig);
 const handleI18nRouting = createIntlMiddleware(routing);
 
-const PUBLIC_PAGE_ROUTES = ['/login', '/pricing'];
-const PUBLIC_API_ROUTES = ['/api/auth', '/api/v1/auth', '/api/v1/health', '/api/v1/webhooks', '/api/test'];
+const PUBLIC_PAGE_ROUTES = ['/login', '/pricing', '/market'];
+const PUBLIC_API_ROUTES = [
+  '/api/auth',
+  '/api/v1/auth',
+  '/api/v1/health',
+  '/api/v1/webhooks',
+  '/api/test',
+  '/api/v1/skills',
+];
 const ONBOARDING_ROUTE = '/onboarding';
 
 const LOCALE_PREFIX_PATTERN = new RegExp(`^/(${routing.locales.join('|')})(?=/|$)`);

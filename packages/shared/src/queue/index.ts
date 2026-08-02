@@ -26,3 +26,18 @@ export {
   PROFILE_PARSE_JOB_OPTS,
   type ProfileParsePayload,
 } from './profile-parse';
+export {
+  getSkillTrendAggregateQueue,
+  SKILL_TREND_AGGREGATE_JOB_OPTS,
+  type SkillTrendAggregatePayload,
+} from './skill-trend-aggregate';
+export {
+  getCareerAgentDailyQueue,
+  CAREER_AGENT_DAILY_JOB_OPTS,
+  type CareerAgentDailyPayload,
+} from './career-agent-daily';
+export {
+  getCareerBriefGenerateQueue,
+  CAREER_BRIEF_GENERATE_JOB_OPTS,
+  type CareerBriefGeneratePayload,
+} from './career-brief-generate';

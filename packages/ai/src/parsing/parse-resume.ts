@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { PDFParse } from 'pdf-parse';
 import { getOpenRouterClient } from '../openrouter-client';
-import { RESUME_PARSING_SYSTEM_PROMPT, buildResumeParsingUserPrompt } from '../prompts/resume-parsing';
+import {
+  RESUME_PARSING_SYSTEM_PROMPT,
+  buildResumeParsingUserPrompt,
+} from '../prompts/resume-parsing';
+import { callWithFallback } from '../fallback';
 
 const DEFAULT_LLM_MODEL = 'gpt-4o-mini';
-const PARSE_MAX_RETRIES = 2;
 
 const ResumeParseOutputSchema = z.object({
   skills: z.array(z.string()).max(50),
@@ -32,9 +35,9 @@ export async function extractResumeText(buffer: Buffer, mimeType: string): Promi
   }
 }
 
-async function callLLM(resumeText: string): Promise<ResumeParseResult> {
+async function callLLM(model: string, resumeText: string): Promise<ResumeParseResult> {
   const response = await getOpenRouterClient().chat.completions.create({
-    model: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
+    model,
     temperature: 0.2,
     max_tokens: 600,
     response_format: { type: 'json_object' },
@@ -50,16 +53,18 @@ async function callLLM(resumeText: string): Promise<ResumeParseResult> {
   return ResumeParseOutputSchema.parse(JSON.parse(content));
 }
 
-// Returns null when both attempts fail (JSON parsing / schema validation / API
-// error) — the caller persists what it has and leaves resume fields empty
-// rather than blocking the rest of the profile_parse job.
+// Returns null when the free model (and, if configured and within budget,
+// the paid fallback per ai-scoring.md §8.5) both fail — the caller persists
+// what it has and leaves resume fields empty rather than blocking the rest
+// of the profile_parse job.
 export async function parseResumeFields(resumeText: string): Promise<ResumeParseResult | null> {
-  for (let attempt = 1; attempt <= PARSE_MAX_RETRIES; attempt++) {
-    try {
-      return await callLLM(resumeText);
-    } catch {
-      if (attempt === PARSE_MAX_RETRIES) return null;
-    }
-  }
-  return null;
+  return callWithFallback(
+    (model) => callLLM(model, resumeText),
+    {
+      primary: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
+      fallback: process.env.CHAT_MODEL_FALLBACK,
+    },
+    (model, attempt, error) =>
+      console.error(`[parse-resume] attempt ${attempt} (${model}) failed:`, error),
+  );
 }
