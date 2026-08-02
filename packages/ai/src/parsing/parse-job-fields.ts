@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getOpenRouterClient } from '../openrouter-client';
+import { parseLLMJson } from '../parse-llm-json';
 import { JOB_PARSING_SYSTEM_PROMPT, buildJobParsingUserPrompt } from '../prompts/job-parsing';
 import type { ParsedJobFields } from '@ai-job-market-intelligence/shared/ingestion';
 
@@ -70,7 +71,7 @@ async function callLLM(input: ParseJobFieldsInput): Promise<ParsedJobFields> {
   const content = message?.content ?? (message as { reasoning?: string } | undefined)?.reasoning;
   if (!content) throw new Error('LLM returned empty response');
 
-  return JobParseOutputSchema.parse(JSON.parse(content));
+  return JobParseOutputSchema.parse(parseLLMJson(content));
 }
 
 // Never throws: JSON/schema failures retry once, then fall back to a

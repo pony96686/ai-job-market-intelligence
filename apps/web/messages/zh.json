@@ -6,7 +6,9 @@
   "common": {
     "appName": "AI Job Market Intelligence",
     "retry": "重试",
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "backToDashboard": "返回仪表盘",
+    "logIn": "登录"
   },
   "validation": {
     "fieldLabels": {
@@ -44,6 +46,7 @@
   "nav": {
     "dashboard": "仪表盘",
     "jobs": "职位",
+    "market": "技能市场",
     "settings": "设置",
     "billing": "账单",
     "jobDetail": "职位详情",
@@ -134,7 +137,33 @@
     "noGapDescription": "该岗位所需技能你都已具备。",
     "noSkillDataDescription": "该岗位的职位数据还不够，暂时无法判断所需技能。",
     "lowConfidenceNotice": "该岗位职位数据较少，缺口分析可能不够准确。",
-    "failedToLoadSkillGap": "加载技能缺口分析失败"
+    "failedToLoadSkillGap": "加载技能缺口分析失败",
+    "skillGrowthHeading": "你的技能在市场上的表现",
+    "skillGrowthNoData": "你的技能还没有市场数据，请稍后再来查看。",
+    "skillGrowthJobCount": "{count} 个职位"
+  },
+  "marketSkills": {
+    "title": "技能市场情报",
+    "description": "看看现在远程软件工程职位都在要求什么技能。",
+    "rankingHeading": "技能排行榜",
+    "heatmapHeading": "技能热力图",
+    "heatmapDescription": "按岗位划分的热门技能——颜色越深，说明这个技能在该岗位的职位里被提到得越多。",
+    "windowDays": "最近 {days} 天",
+    "sort": {
+      "count": "提及最多",
+      "growing": "增长最快",
+      "declining": "下降最快"
+    },
+    "accumulatingData": "数据积累中",
+    "failedToLoad": "加载技能数据失败",
+    "noDataTitle": "暂无数据",
+    "noDataDescription": "技能趋势还在计算中，请稍后再来查看。",
+    "table": {
+      "rank": "#",
+      "skill": "技能",
+      "jobCount": "职位数",
+      "growth": "增长"
+    }
   },
   "jobs": {
     "title": "职位",

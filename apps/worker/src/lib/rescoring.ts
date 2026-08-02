@@ -12,9 +12,15 @@ import { CURRENT_SCORING_VERSION } from '@ai-job-market-intelligence/shared/cons
 // this is always the "existing user updated their profile" case from
 // ai-scoring.md §7.1 — never the "new user onboarding" case, which is
 // handled separately in apps/web/lib/queue.ts.
+//
+// embedding: { isNot: null } excludes jobs whose embedding hasn't landed yet
+// — see apps/web/lib/queue.ts's enqueueRescoring for why this query needs it
+// (ingestion-parse.ts's own "new job ingested" trigger doesn't race, but this
+// one queries independently of ingestion timing).
 export async function enqueueRescoring(userId: string): Promise<void> {
   const jobs = await prisma.job.findMany({
     where: {
+      embedding: { isNot: null },
       OR: [
         { scores: { none: { userId } } },
         { scores: { some: { userId, scoringVersion: { not: CURRENT_SCORING_VERSION } } } },

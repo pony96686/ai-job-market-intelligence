@@ -19,6 +19,7 @@ export function Header({ userEmail }: { userEmail: string }) {
   function breadcrumbLabel(): string {
     if (pathname === '/jobs') return t('jobs');
     if (pathname.startsWith('/jobs/')) return t('jobDetail');
+    if (pathname.startsWith('/market/skills')) return t('market');
     if (pathname.startsWith('/settings/billing')) return t('billing');
     if (pathname.startsWith('/settings')) return t('settings');
     if (pathname.startsWith('/onboarding')) return t('onboarding');

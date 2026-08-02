@@ -6,7 +6,9 @@
   "common": {
     "appName": "AI Job Market Intelligence",
     "retry": "Retry",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "backToDashboard": "Back to Dashboard",
+    "logIn": "Log in"
   },
   "validation": {
     "fieldLabels": {
@@ -44,6 +46,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "jobs": "Jobs",
+    "market": "Skill Market",
     "settings": "Settings",
     "billing": "Billing",
     "jobDetail": "Job Detail",
@@ -134,7 +137,33 @@
     "noGapDescription": "You already cover every skill we see for this role.",
     "noSkillDataDescription": "We don't have enough job postings for this role yet to determine required skills.",
     "lowConfidenceNotice": "Not enough job data for this role yet — this analysis may be inaccurate.",
-    "failedToLoadSkillGap": "Failed to load skill gap analysis"
+    "failedToLoadSkillGap": "Failed to load skill gap analysis",
+    "skillGrowthHeading": "Your Skills in the Market",
+    "skillGrowthNoData": "We don't have market data for your skills yet. Check back soon.",
+    "skillGrowthJobCount": "{count} postings"
+  },
+  "marketSkills": {
+    "title": "Skill Market Intelligence",
+    "description": "Which skills remote software engineering jobs are asking for right now.",
+    "rankingHeading": "Skill Ranking",
+    "heatmapHeading": "Skill Heatmap",
+    "heatmapDescription": "Top skills by role — darker cells mean more job postings mention that skill for that role.",
+    "windowDays": "Last {days} days",
+    "sort": {
+      "count": "Most mentioned",
+      "growing": "Fastest growing",
+      "declining": "Fastest declining"
+    },
+    "accumulatingData": "Accumulating data",
+    "failedToLoad": "Failed to load skill data",
+    "noDataTitle": "No data yet",
+    "noDataDescription": "Skill trends are still being calculated. Check back soon.",
+    "table": {
+      "rank": "#",
+      "skill": "Skill",
+      "jobCount": "Job postings",
+      "growth": "Growth"
+    }
   },
   "jobs": {
     "title": "Jobs",

@@ -26,3 +26,8 @@ export {
   PROFILE_PARSE_JOB_OPTS,
   type ProfileParsePayload,
 } from './profile-parse';
+export {
+  getSkillTrendAggregateQueue,
+  SKILL_TREND_AGGREGATE_JOB_OPTS,
+  type SkillTrendAggregatePayload,
+} from './skill-trend-aggregate';

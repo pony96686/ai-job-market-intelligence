@@ -10,16 +10,29 @@ const RESCORING_WINDOW_DAYS = 7;
 // slow), while an existing user updating their profile gets every job that
 // has no score yet or was scored with an older algorithm version — no time
 // bound, since a real preference change should be reflected everywhere.
+//
+// Both branches require embedding: { isNot: null } — ingestion-parse.ts
+// generates and persists a job's embedding before enqueueing its own
+// "new job ingested" scoring trigger, so that trigger never races. These two
+// triggers query independently of ingestion timing, so without this filter a
+// job caught between insert and embedding generation gets picked up
+// "half-finished": scoring throws (no embedding yet), retries exhaust, and it
+// fails permanently — enqueueRescoringJobs's jobId is `score:{jobId}:{userId}`,
+// so a later re-enqueue for the same pair is silently deduped by BullMQ, not
+// retried. Excluding it here isn't a permanent miss: once its embedding lands,
+// ingestion-parse.ts's own trigger scores it for every onboarded user anyway.
 export async function enqueueRescoring(userId: string, isNewOnboarding: boolean): Promise<void> {
   const jobs = isNewOnboarding
     ? await prisma.job.findMany({
         where: {
           createdAt: { gte: new Date(Date.now() - RESCORING_WINDOW_DAYS * 24 * 60 * 60 * 1000) },
+          embedding: { isNot: null },
         },
         select: { id: true },
       })
     : await prisma.job.findMany({
         where: {
+          embedding: { isNot: null },
           OR: [
             { scores: { none: { userId } } },
             { scores: { some: { userId, scoringVersion: { not: CURRENT_SCORING_VERSION } } } },

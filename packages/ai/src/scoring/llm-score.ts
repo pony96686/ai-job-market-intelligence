@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getOpenRouterClient } from '../openrouter-client';
+import { parseLLMJson } from '../parse-llm-json';
 import { SCORING_SYSTEM_PROMPT } from '../prompts/scoring-system';
 import { buildScoringUserPrompt } from '../prompts/scoring-user';
 import type { JobInput, ProfileInput } from '../types';
@@ -48,7 +49,7 @@ async function callLLM(profile: ProfileInput, job: JobInput): Promise<LLMScoreRe
   const content = message?.content ?? (message as { reasoning?: string } | undefined)?.reasoning;
   if (!content) throw new Error('LLM returned empty response');
 
-  const parsed = LLMScoreOutputSchema.parse(JSON.parse(content));
+  const parsed = LLMScoreOutputSchema.parse(parseLLMJson(content));
   return {
     score: parsed.score,
     reasoning: parsed.reasoning,

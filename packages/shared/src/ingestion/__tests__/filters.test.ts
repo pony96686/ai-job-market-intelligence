@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { passesFilter } from '../filters';
+import { passesFilter, hasExcludedTag } from '../filters';
 import type { NormalizedJob } from '../types';
 
 function makeJob(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
@@ -28,16 +28,32 @@ describe('passesFilter', () => {
   });
 
   it('rejects onsite-only locations for career-board sources', () => {
-    expect(passesFilter(makeJob({ source: 'GREENHOUSE', location: 'San Francisco, CA' }))).toBe(false);
+    expect(passesFilter(makeJob({ source: 'GREENHOUSE', location: 'San Francisco, CA' }))).toBe(
+      false,
+    );
   });
 
   it('bypasses the remote-keyword check for remote-only job boards (RemoteOK/Himalayas)', () => {
     expect(passesFilter(makeJob({ source: 'REMOTEOK', location: 'San Francisco, CA' }))).toBe(true);
-    expect(passesFilter(makeJob({ source: 'HIMALAYAS', location: 'San Francisco, CA' }))).toBe(true);
+    expect(passesFilter(makeJob({ source: 'HIMALAYAS', location: 'San Francisco, CA' }))).toBe(
+      true,
+    );
   });
 
   it('rejects jobs with excluded tags', () => {
     expect(passesFilter(makeJob({ tags: ['marketing'] }))).toBe(false);
+  });
+
+  it('rejects excluded tags regardless of case (e.g. source-provided "B2B-Sales")', () => {
+    expect(passesFilter(makeJob({ tags: ['B2B-Sales'] }))).toBe(false);
+    expect(passesFilter(makeJob({ tags: ['Enterprise-Sales'] }))).toBe(false);
+    expect(passesFilter(makeJob({ tags: ['Business-Development'] }))).toBe(false);
+  });
+
+  it('rejects non-tech categories that previously slipped through (healthcare/medical/radiology)', () => {
+    expect(passesFilter(makeJob({ tags: ['Radiology'] }))).toBe(false);
+    expect(passesFilter(makeJob({ tags: ['Healthcare'] }))).toBe(false);
+    expect(passesFilter(makeJob({ tags: ['Medical'] }))).toBe(false);
   });
 
   it('rejects titles shorter than 3 characters', () => {
@@ -46,5 +62,15 @@ describe('passesFilter', () => {
 
   it('accepts a job with no postedAt', () => {
     expect(passesFilter(makeJob({ postedAt: null }))).toBe(true);
+  });
+});
+
+// Exported for reuse by the mvp-scope.md §8 Epic 4.16 one-time backfill
+// (apps/worker/scripts/backfill-remove-nontech-jobs.ts), which re-checks
+// already-ingested jobs' tags against this same rule.
+describe('hasExcludedTag', () => {
+  it('matches case-insensitively', () => {
+    expect(hasExcludedTag(['Radiology'])).toBe(true);
+    expect(hasExcludedTag(['node', 'typescript'])).toBe(false);
   });
 });

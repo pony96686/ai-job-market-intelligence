@@ -11,6 +11,7 @@ import { processIngestionParse } from './processors/ingestion-parse.js';
 import { processScoringMatch } from './processors/scoring-match.js';
 import { processNotifyEmail } from './processors/notify-email.js';
 import { processProfileParse } from './processors/profile-parse.js';
+import { processSkillTrendAggregate } from './processors/skill-trend-aggregate.js';
 import { setupCronJobs } from './queues/setup-cron.js';
 
 const port = Number(process.env.PORT ?? 3001);
@@ -43,12 +44,22 @@ const server = createServer(async (req, res) => {
 });
 
 const workers = [
-  new Worker(QUEUE_NAMES.COMPANY_DISCOVERY, processCompanyDiscovery, { connection, concurrency: 1 }),
-  new Worker(QUEUE_NAMES.INGESTION_COLLECT, processIngestionCollect, { connection, concurrency: 5 }),
+  new Worker(QUEUE_NAMES.COMPANY_DISCOVERY, processCompanyDiscovery, {
+    connection,
+    concurrency: 1,
+  }),
+  new Worker(QUEUE_NAMES.INGESTION_COLLECT, processIngestionCollect, {
+    connection,
+    concurrency: 5,
+  }),
   new Worker(QUEUE_NAMES.INGESTION_PARSE, processIngestionParse, { connection, concurrency: 3 }),
   new Worker(QUEUE_NAMES.SCORING_MATCH, processScoringMatch, { connection, concurrency: 5 }),
   new Worker(QUEUE_NAMES.NOTIFY_EMAIL, processNotifyEmail, { connection, concurrency: 3 }),
   new Worker(QUEUE_NAMES.PROFILE_PARSE, processProfileParse, { connection, concurrency: 2 }),
+  new Worker(QUEUE_NAMES.SKILL_TREND_AGGREGATE, processSkillTrendAggregate, {
+    connection,
+    concurrency: 1,
+  }),
 ];
 
 workers.forEach((w) => {
@@ -61,7 +72,10 @@ async function main() {
   await setupCronJobs();
 
   server.listen(port, () => {
-    logger.info({ event: 'worker_started', port, queues: workers.map((w) => w.name) }, 'worker started');
+    logger.info(
+      { event: 'worker_started', port, queues: workers.map((w) => w.name) },
+      'worker started',
+    );
   });
 }
 
