@@ -90,7 +90,9 @@ export function regionPenalty(profile: ProfileInput, job: JobInput): number {
   return matched ? 0 : REGION_MISMATCH_PENALTY;
 }
 
-function normalizeToAnnualUSD(amount: number, period: SalaryPeriod | null): number {
+// Exported for reuse by packages/ai/src/career/salary-range.ts — same "no
+// currency conversion, period-only normalization" assumption applies there.
+export function normalizeToAnnualUSD(amount: number, period: SalaryPeriod | null): number {
   if (period === 'HOURLY') return amount * HOURLY_HOURS_PER_YEAR;
   if (period === 'MONTHLY') return amount * MONTHS_PER_YEAR;
   return amount;

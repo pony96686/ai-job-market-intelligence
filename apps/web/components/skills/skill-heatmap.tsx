@@ -2,22 +2,16 @@
 
 import { useTranslations } from 'next-intl';
 import { useQueries } from '@tanstack/react-query';
+import { CANDIDATE_ENGINEERING_ROLES } from '@ai-job-market-intelligence/shared/constants';
 import { ErrorState } from '@/components/common/error-state';
 import { EmptyState } from '@/components/common/empty-state';
 import { fetchSkillHeatmap } from '@/lib/api/skills';
 
-// Fixed role list — the heatmap API is scoped to one role per call (its
-// `role` filter is a free-text `contains` match, not one of a small fixed
-// set in the schema), so the frontend assembles the skill x role matrix by
-// calling it once per role here and combining the results client-side.
-const HEATMAP_ROLES = [
-  'Backend Engineer',
-  'Frontend Engineer',
-  'Full-Stack Engineer',
-  'DevOps Engineer',
-  'Mobile Engineer',
-  'Data Engineer',
-] as const;
+// The heatmap API is scoped to one role per call (its `role` filter is a
+// free-text `contains` match, not one of a small fixed set in the schema),
+// so the frontend assembles the skill x role matrix by calling it once per
+// role here and combining the results client-side.
+const HEATMAP_ROLES = CANDIDATE_ENGINEERING_ROLES;
 
 const MAX_HEATMAP_ROWS = 12;
 
