@@ -7,3 +7,4 @@ export * from './parsing';
 export * from './skill-gap';
 export * from './skill-trends';
 export * from './career';
+export * from './fallback';

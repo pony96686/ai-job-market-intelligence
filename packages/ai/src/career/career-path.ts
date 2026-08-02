@@ -33,9 +33,10 @@ export function getCareerPathRecommendations(
   userSkills: string[],
   candidateRoles: CareerPathRoleJobs[],
   // slug -> latest growthPercent, e.g. from the day's skill_trend_snapshots.
-  // Optional and additive per v2-scope.md §8 Epic 11.1: "技能有增长率数据时
-  // 叠加为加权因子，数据积累够了自动生效" — omitting it just means every
-  // candidate's weight falls back to plain jobCount.
+  // Optional and additive per v2-scope.md §8 Epic 11.1 — growth data layers
+  // in as a weighting factor once it's available, and takes effect on its
+  // own as it accumulates; omitting it just means every candidate's weight
+  // falls back to plain jobCount.
   skillGrowth: ReadonlyMap<string, number | null> = new Map(),
 ): CareerPathRecommendation[] {
   const userSlugs = new Set(userSkills.flatMap((raw) => normalizeSkill(raw).map((s) => s.slug)));

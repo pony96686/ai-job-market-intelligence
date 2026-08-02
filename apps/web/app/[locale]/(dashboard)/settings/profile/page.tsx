@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { ProfileForm } from '@/components/profile/profile-form';
 import { ResumeUpload } from '@/components/profile/resume-upload';
 import { GithubConnect } from '@/components/profile/github-connect';
@@ -18,6 +19,11 @@ export default function ProfileSettingsPage() {
         </div>
         <ResumeUpload />
         <GithubConnect />
+      </div>
+      <div className="border-t border-border pt-6">
+        <Link href="/settings/notifications" className="text-sm text-primary hover:underline">
+          {t('notificationSettingsLink')} →
+        </Link>
       </div>
     </div>
   );

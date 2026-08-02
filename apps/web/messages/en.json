@@ -46,6 +46,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "jobs": "Jobs",
+    "careerCoach": "Career Coach",
     "market": "Skill Market",
     "settings": "Settings",
     "billing": "Billing",
@@ -94,7 +95,16 @@
     "updated": "Profile updated. Re-scoring started.",
     "error": "Something went wrong. Please try again.",
     "careerProfileHeading": "Career profile",
-    "careerProfileDescription": "Re-upload your resume or reconnect GitHub to refresh your career profile."
+    "careerProfileDescription": "Re-upload your resume or reconnect GitHub to refresh your career profile.",
+    "notificationSettingsLink": "Notification settings"
+  },
+  "notifications": {
+    "heading": "Notification Settings",
+    "backToProfile": "Back to Profile Settings",
+    "dailyBriefLabel": "Daily Career Brief",
+    "dailyBriefDescription": "Get a daily email with market highlights, new high matches, and a skill worth learning next.",
+    "saved": "Saved.",
+    "saveFailed": "Failed to save. Please try again."
   },
   "resume": {
     "uploadButton": "Upload Resume",
@@ -140,7 +150,16 @@
     "failedToLoadSkillGap": "Failed to load skill gap analysis",
     "skillGrowthHeading": "Your Skills in the Market",
     "skillGrowthNoData": "We don't have market data for your skills yet. Check back soon.",
-    "skillGrowthJobCount": "{count} postings"
+    "skillGrowthJobCount": "{count} postings",
+    "dailyBriefHeading": "Your Daily Career Brief",
+    "dailyBriefNoData": "Your first brief is generated overnight. Check back tomorrow.",
+    "dailyBriefGrowingSkills": "Fastest-growing skills",
+    "dailyBriefJobCount": "{count} postings",
+    "dailyBriefHotCompanies": "Hiring the most right now",
+    "dailyBriefActiveJobs": "{count} active postings",
+    "dailyBriefRecommendedJobs": "New high matches for you",
+    "dailyBriefRecommendedSkill": "Worth learning next",
+    "dailyBriefAskCoach": "Ask the Career Coach"
   },
   "marketSkills": {
     "title": "Skill Market Intelligence",
@@ -164,6 +183,19 @@
       "jobCount": "Job postings",
       "growth": "Growth"
     }
+  },
+  "careerCoach": {
+    "title": "Career Coach",
+    "emptyState": "Ask about career paths, in-demand skills, or salary ranges — grounded in real job market data.",
+    "placeholder": "Ask a question...",
+    "send": "Send",
+    "sendFailed": "Failed to send. Please try again.",
+    "rateLimited": "The AI service has hit today's usage limit. Please try again later.",
+    "clearConversation": "Clear conversation",
+    "clearConfirmTitle": "Clear this conversation?",
+    "clearConfirmDescription": "This permanently deletes your entire Career Coach conversation history. This cannot be undone.",
+    "clearCancel": "Cancel",
+    "clearConfirm": "Clear conversation"
   },
   "jobs": {
     "title": "Jobs",

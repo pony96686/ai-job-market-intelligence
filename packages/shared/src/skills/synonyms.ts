@@ -1,7 +1,8 @@
-// Manually maintained synonym → canonical slug map (roadmap.md §1.1: "同义词
-// 映射表人工维护，不做运行时动态学习，避免脏数据污染排行榜"). Only covers
-// common variant spellings actually worth merging — an unmapped skill still
-// works fine, it just won't be merged with any of its variants.
+// Manually maintained synonym → canonical slug map (roadmap.md §1.1: kept
+// human-curated rather than learned at runtime, to avoid dirty data
+// polluting the ranking). Only covers common variant spellings actually
+// worth merging — an unmapped skill still works fine, it just won't be
+// merged with any of its variants.
 export const SKILL_SYNONYMS: Record<string, string> = {
   // Languages
   js: 'javascript',

@@ -65,7 +65,9 @@ async function fetchHimalayas(): Promise<HimalayasRawJob[]> {
     });
 
     if (!res.ok) {
-      throw new IngestionError(`Himalayas API returned ${res.status}`, { retryable: res.status >= 500 });
+      throw new IngestionError(`Himalayas API returned ${res.status}`, {
+        retryable: res.status >= 500,
+      });
     }
 
     const data = (await res.json()) as HimalayasResponse;
@@ -79,6 +81,34 @@ async function fetchHimalayas(): Promise<HimalayasRawJob[]> {
   return results;
 }
 
+// The live API has been observed returning the literal string "name" as
+// companyName for a subset of postings — looks like a template-rendering
+// bug on Himalayas's side (the field name leaking through instead of its
+// value), reproduced by requesting limit=100 (what fetchHimalayas above
+// uses) vs. a small limit which returns the real value for the same
+// postings. companySlug stays correct in both cases, so it's the fallback
+// once companyName is confirmed to be this sentinel garbage value rather
+// than a genuine (if unlikely) company literally named "name".
+const BROKEN_COMPANY_NAME_SENTINEL = 'name';
+
+function humanizeSlug(slug: string): string {
+  return slug
+    .split('-')
+    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+    .join(' ');
+}
+
+function resolveCompanyName(raw: HimalayasRawJob): string {
+  const companyName = raw.companyName?.trim();
+  if (companyName && companyName.toLowerCase() !== BROKEN_COMPANY_NAME_SENTINEL) {
+    return companyName;
+  }
+  if (raw.companySlug?.trim()) {
+    return humanizeSlug(raw.companySlug.trim());
+  }
+  return 'Unknown';
+}
+
 function normalizeHimalayasJob(raw: HimalayasRawJob): NormalizedJob | null {
   if (!raw.guid || !raw.title?.trim()) return null;
 
@@ -89,7 +119,7 @@ function normalizeHimalayasJob(raw: HimalayasRawJob): NormalizedJob | null {
     externalId: raw.guid,
     source: 'HIMALAYAS',
     title: raw.title.trim(),
-    company: raw.companyName?.trim() || 'Unknown',
+    company: resolveCompanyName(raw),
     description,
     url: raw.applicationLink,
     location: raw.locationRestrictions?.length ? raw.locationRestrictions.join(', ') : 'Remote',

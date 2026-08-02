@@ -3,13 +3,13 @@ import { getOpenRouterClient } from '../openrouter-client';
 import { parseLLMJson } from '../parse-llm-json';
 import { SCORING_SYSTEM_PROMPT } from '../prompts/scoring-system';
 import { buildScoringUserPrompt } from '../prompts/scoring-user';
+import { callWithFallback } from '../fallback';
 import type { JobInput, ProfileInput } from '../types';
 
 // Non-reasoning instruct model (see packages/ai/src/parsing/parse-job-fields.ts) —
 // avoids the empty-content failure mode reasoning models like gpt-oss-20b hit
 // when chain-of-thought exhausts the token budget before final content.
 const DEFAULT_LLM_MODEL = 'google/gemma-4-26b-a4b-it:free';
-const LLM_MAX_RETRIES = 2; // initial attempt + 1 retry
 
 const LLMScoreOutputSchema = z.object({
   score: z.number().int().min(0).max(100),
@@ -25,9 +25,13 @@ export interface LLMScoreResult {
   skillGap: string[];
 }
 
-async function callLLM(profile: ProfileInput, job: JobInput): Promise<LLMScoreResult> {
+async function callLLM(
+  model: string,
+  profile: ProfileInput,
+  job: JobInput,
+): Promise<LLMScoreResult> {
   const response = await getOpenRouterClient().chat.completions.create({
-    model: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
+    model,
     temperature: 0.2,
     // gpt-oss-20b is a reasoning model: with a tight token budget it can burn
     // the whole budget on chain-of-thought and return empty `content`.
@@ -58,19 +62,20 @@ async function callLLM(profile: ProfileInput, job: JobInput): Promise<LLMScoreRe
   };
 }
 
-// Returns null when both attempts fail (JSON parsing / schema validation / API
-// error) — the caller falls back to rule_score in that case
+// Returns null when the free model (and, if configured and within budget, the
+// paid fallback per ai-scoring.md §8.5) both fail — the caller falls back to
+// rule_score in that case.
 export async function computeLLMScore(
   profile: ProfileInput,
   job: JobInput,
 ): Promise<LLMScoreResult | null> {
-  for (let attempt = 1; attempt <= LLM_MAX_RETRIES; attempt++) {
-    try {
-      return await callLLM(profile, job);
-    } catch (error) {
-      console.error(`[llm-score] attempt ${attempt}/${LLM_MAX_RETRIES} failed:`, error);
-      if (attempt === LLM_MAX_RETRIES) return null;
-    }
-  }
-  return null;
+  return callWithFallback(
+    (model) => callLLM(model, profile, job),
+    {
+      primary: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
+      fallback: process.env.CHAT_MODEL_FALLBACK,
+    },
+    (model, attempt, error) =>
+      console.error(`[llm-score] attempt ${attempt} (${model}) failed:`, error),
+  );
 }

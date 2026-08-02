@@ -7,3 +7,4 @@ export * from './billing';
 export * from './skill-gap';
 export * from './ats-company';
 export * from './skills';
+export * from './career-agent';

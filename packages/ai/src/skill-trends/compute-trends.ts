@@ -30,8 +30,9 @@ function startOfUTCDay(date: Date): Date {
 }
 
 // Pure function: absolute mention counts always compute (available from day
-// one of ingestion); growth rate only when both windows have enough data,
-// see mvp-scope.md §8 Epic 10.3/roadmap.md §1.1's "绝对量优先，增长率渐进增强".
+// one of ingestion); growth rate only when both windows have enough data —
+// absolute-count-first, growth-rate-as-progressive-enhancement, see
+// mvp-scope.md §8 Epic 10.3/roadmap.md §1.1.
 export function computeSkillTrendSnapshots(
   jobs: JobSkillsRecord[],
   now: Date,

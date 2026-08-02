@@ -111,18 +111,23 @@ model User {
   email               String    @unique
   emailVerified       DateTime? @map("email_verified")
   onboardingCompleted Boolean   @default(false) @map("onboarding_completed")
+  // Daily Career Brief (Epic 12) is on by default for all users per
+  // v2-scope.md §2 decision #1 — toggled off from /settings/notifications.
+  dailyBriefEnabled   Boolean   @default(true) @map("daily_brief_enabled")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
-  profile       UserProfile?
-  careerProfile CareerProfile?
-  subscription  Subscription?
-  usageDaily    UsageDaily[]
-  jobScores     JobScore[]
-  notifications Notification[]
-  accounts      Account[]
-  sessions      Session[]
-  orders        Order[]
+  profile             UserProfile?
+  careerProfile       CareerProfile?
+  subscription        Subscription?
+  usageDaily          UsageDaily[]
+  jobScores           JobScore[]
+  notifications       Notification[]
+  accounts            Account[]
+  sessions            Session[]
+  orders              Order[]
+  careerBriefs        CareerBrief[]
+  careerCoachMessages CareerCoachMessage[]
 
   @@map("users")
 }
@@ -449,6 +454,41 @@ model SkillTrendSnapshot {
   @@unique([skillId, windowDays, periodEnd])
   @@index([windowDays, periodEnd, growthPercent(sort: Desc)])
   @@map("skill_trend_snapshots")
+}
+
+// ─── AI Career Agent ───────────────────────────────────────
+
+model CareerBrief {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  briefDate DateTime @db.Date @map("brief_date")
+  // { marketHighlights, recommendedJobs, recommendedSkill }, see
+  // v2-scope.md §3.2/§8 Epic 12.2 — structured, no LLM call.
+  summary   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, briefDate])
+  @@map("career_briefs")
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+model CareerCoachMessage {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  role      ChatRole
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("career_coach_messages")
 }
 
 // ─── Phase 2+ 预留（B2B pivot 时才考虑，MVP 不 migration） ───

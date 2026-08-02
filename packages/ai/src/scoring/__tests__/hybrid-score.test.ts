@@ -125,4 +125,52 @@ describe('scoreJob', () => {
     expect(result.strengths).toEqual([]);
     expect(result.skillGap).toEqual([]);
   });
+
+  // Epic 5.12 (mvp-scope.md §8) / ai-scoring.md §8.5: an optional paid
+  // fallback model, tried only after the free model's own retries are
+  // exhausted. Fetch is mocked resolved so the budget check (GET /key)
+  // passes without a real network call.
+  it('uses CHAT_MODEL_FALLBACK once the free model is exhausted, when configured', async () => {
+    process.env.CHAT_MODEL_FALLBACK = 'paid-model';
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { limit_remaining: 5 } }),
+    }) as unknown as typeof fetch;
+
+    mockCreate
+      .mockRejectedValueOnce(new Error('API error'))
+      .mockRejectedValueOnce(new Error('API error'))
+      .mockResolvedValueOnce({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                score: 90,
+                reasoning: 'Strong match from the fallback model.',
+                strengths: [],
+                skill_gap: [],
+              }),
+            },
+          },
+        ],
+      });
+
+    try {
+      const result = await scoreJob(profile, job, {
+        profile: similarEmbedding,
+        job: similarEmbedding,
+      });
+
+      expect(mockCreate).toHaveBeenCalledTimes(3);
+      expect(mockCreate).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({ model: 'paid-model' }),
+      );
+      expect(result.llmScore).toBe(90);
+    } finally {
+      delete process.env.CHAT_MODEL_FALLBACK;
+      global.fetch = originalFetch;
+    }
+  });
 });

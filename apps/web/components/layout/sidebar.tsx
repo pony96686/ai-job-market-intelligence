@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { LayoutDashboard, Briefcase, TrendingUp, Settings, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Bot, TrendingUp, Settings, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
 
@@ -13,6 +13,7 @@ import { Link, usePathname } from '@/i18n/navigation';
 const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
   { href: '/jobs', labelKey: 'jobs', icon: Briefcase },
+  { href: '/career-coach', labelKey: 'careerCoach', icon: Bot },
   { href: '/settings/profile', labelKey: 'settings', icon: Settings },
   { href: '/settings/billing', labelKey: 'billing', icon: CreditCard },
 ] as const;

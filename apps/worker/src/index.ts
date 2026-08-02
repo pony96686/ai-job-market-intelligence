@@ -12,6 +12,8 @@ import { processScoringMatch } from './processors/scoring-match.js';
 import { processNotifyEmail } from './processors/notify-email.js';
 import { processProfileParse } from './processors/profile-parse.js';
 import { processSkillTrendAggregate } from './processors/skill-trend-aggregate.js';
+import { processCareerAgentDaily } from './processors/career-agent-daily.js';
+import { processCareerBriefGenerate } from './processors/career-brief-generate.js';
 import { setupCronJobs } from './queues/setup-cron.js';
 
 const port = Number(process.env.PORT ?? 3001);
@@ -59,6 +61,14 @@ const workers = [
   new Worker(QUEUE_NAMES.SKILL_TREND_AGGREGATE, processSkillTrendAggregate, {
     connection,
     concurrency: 1,
+  }),
+  new Worker(QUEUE_NAMES.CAREER_AGENT_DAILY, processCareerAgentDaily, {
+    connection,
+    concurrency: 1,
+  }),
+  new Worker(QUEUE_NAMES.CAREER_BRIEF_GENERATE, processCareerBriefGenerate, {
+    connection,
+    concurrency: 5,
   }),
 ];
 

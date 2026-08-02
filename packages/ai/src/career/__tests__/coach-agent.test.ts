@@ -1,0 +1,181 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { mockCreate } = vi.hoisted(() => ({ mockCreate: vi.fn() }));
+
+vi.mock('openai', () => ({
+  default: vi.fn().mockImplementation(() => ({
+    chat: { completions: { create: mockCreate } },
+  })),
+}));
+
+import {
+  runCareerCoachTurn,
+  CareerCoachRateLimitError,
+  type CareerCoachMessage,
+} from '../coach-agent';
+
+function textResponse(content: string | null) {
+  return { choices: [{ message: { content, tool_calls: undefined } }] };
+}
+
+function toolCallResponse(name: string, args: Record<string, unknown>, id = 'call_1') {
+  return {
+    choices: [
+      {
+        message: {
+          content: null,
+          tool_calls: [
+            { id, type: 'function', function: { name, arguments: JSON.stringify(args) } },
+          ],
+        },
+      },
+    ],
+  };
+}
+
+const history: CareerCoachMessage[] = [
+  { role: 'user', content: 'What is the salary range for Backend Engineer?' },
+];
+
+beforeEach(() => {
+  mockCreate.mockReset();
+});
+
+describe('runCareerCoachTurn', () => {
+  it('returns the direct answer when no tool call is needed', async () => {
+    mockCreate.mockResolvedValue(textResponse('Hi, how can I help with your career?'));
+
+    const result = await runCareerCoachTurn(history, vi.fn());
+
+    expect(result).toBe('Hi, how can I help with your career?');
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('executes the requested tool and feeds the result back for the final answer', async () => {
+    const executeTool = vi.fn().mockResolvedValue({ min: 90000, max: 150000, median: 120000 });
+    mockCreate
+      .mockResolvedValueOnce(toolCallResponse('get_salary_range', { role: 'Backend Engineer' }))
+      .mockResolvedValueOnce(
+        textResponse('Backend Engineers typically earn $90k-$150k, median $120k.'),
+      );
+
+    const result = await runCareerCoachTurn(history, executeTool);
+
+    expect(executeTool).toHaveBeenCalledWith({
+      name: 'get_salary_range',
+      arguments: { role: 'Backend Engineer' },
+    });
+    expect(result).toBe('Backend Engineers typically earn $90k-$150k, median $120k.');
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+  });
+
+  it('feeds the tool result back as a tool-role message referencing the same tool_call_id', async () => {
+    const executeTool = vi.fn().mockResolvedValue({ insufficientData: true });
+    mockCreate
+      .mockResolvedValueOnce(
+        toolCallResponse('get_salary_range', { role: 'Rare Role' }, 'call_xyz'),
+      )
+      .mockResolvedValueOnce(textResponse('Not enough data for that role yet.'));
+
+    await runCareerCoachTurn(history, executeTool);
+
+    const secondCallMessages = mockCreate.mock.calls[1]![0].messages;
+    const toolMessage = secondCallMessages.find((m: { role: string }) => m.role === 'tool');
+    expect(toolMessage).toMatchObject({
+      tool_call_id: 'call_xyz',
+      content: JSON.stringify({ insufficientData: true }),
+    });
+  });
+
+  it('supports multiple tool-call rounds before answering', async () => {
+    const executeTool = vi.fn().mockResolvedValue({ ok: true });
+    mockCreate
+      .mockResolvedValueOnce(toolCallResponse('get_career_paths', {}, 'call_1'))
+      .mockResolvedValueOnce(toolCallResponse('get_skill_trend', { skill: 'Rust' }, 'call_2'))
+      .mockResolvedValueOnce(textResponse('Based on both, here is my advice.'));
+
+    const result = await runCareerCoachTurn(history, executeTool);
+
+    expect(executeTool).toHaveBeenCalledTimes(2);
+    expect(result).toBe('Based on both, here is my advice.');
+  });
+
+  it('throws once the tool-call loop exceeds the max round count', async () => {
+    mockCreate.mockResolvedValue(toolCallResponse('get_skill_trend', { skill: 'Rust' }));
+
+    await expect(runCareerCoachTurn(history, vi.fn().mockResolvedValue({}))).rejects.toThrow(
+      'exceeded max tool-call rounds',
+    );
+  });
+
+  it('falls back to the reasoning field when content is null and there are no tool calls', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        { message: { content: null, tool_calls: undefined, reasoning: 'Fallback answer' } },
+      ],
+    });
+
+    const result = await runCareerCoachTurn(history, vi.fn());
+
+    expect(result).toBe('Fallback answer');
+  });
+
+  it('throws when the model returns no usable content at all', async () => {
+    mockCreate.mockResolvedValue(textResponse(null));
+
+    await expect(runCareerCoachTurn(history, vi.fn())).rejects.toThrow('empty response');
+  });
+
+  it('converts a 429 from the LLM call into a distinguishable CareerCoachRateLimitError', async () => {
+    mockCreate.mockRejectedValue(Object.assign(new Error('rate limited'), { status: 429 }));
+
+    await expect(runCareerCoachTurn(history, vi.fn())).rejects.toBeInstanceOf(
+      CareerCoachRateLimitError,
+    );
+  });
+
+  it('rethrows a non-rate-limit error from the LLM call as-is', async () => {
+    mockCreate.mockRejectedValue(new Error('some other API error'));
+
+    await expect(runCareerCoachTurn(history, vi.fn())).rejects.toThrow('some other API error');
+  });
+
+  // Epic 5.12 (mvp-scope.md §8) / ai-scoring.md §8.5: falls straight to the
+  // fallback check on a 429 (no point retrying a daily quota exhaustion),
+  // then uses CAREER_COACH_MODEL_FALLBACK once configured and within budget.
+  it('uses CAREER_COACH_MODEL_FALLBACK after a 429, when configured', async () => {
+    process.env.CAREER_COACH_MODEL_FALLBACK = 'paid-coach-model';
+    const originalFetch = global.fetch;
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { limit_remaining: 5 } }),
+    }) as unknown as typeof fetch;
+
+    mockCreate
+      .mockRejectedValueOnce(Object.assign(new Error('rate limited'), { status: 429 }))
+      .mockResolvedValueOnce(textResponse('Answer from the fallback model.'));
+
+    try {
+      const result = await runCareerCoachTurn(history, vi.fn());
+
+      expect(mockCreate).toHaveBeenCalledTimes(2);
+      expect(mockCreate).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ model: 'paid-coach-model' }),
+      );
+      expect(result).toBe('Answer from the fallback model.');
+    } finally {
+      delete process.env.CAREER_COACH_MODEL_FALLBACK;
+      global.fetch = originalFetch;
+    }
+  });
+
+  it('still throws CareerCoachRateLimitError on a 429 when no fallback is configured (unchanged behavior)', async () => {
+    mockCreate.mockRejectedValue(Object.assign(new Error('rate limited'), { status: 429 }));
+
+    await expect(runCareerCoachTurn(history, vi.fn())).rejects.toBeInstanceOf(
+      CareerCoachRateLimitError,
+    );
+    expect(mockCreate).toHaveBeenCalledTimes(1); // 429 skips the second primary attempt too
+  });
+});

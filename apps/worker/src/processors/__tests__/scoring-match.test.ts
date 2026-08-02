@@ -24,13 +24,10 @@ const { mockBuildProfileText, mockGenerateEmbedding, mockScoreJob } = vi.hoisted
   mockScoreJob: vi.fn(),
 }));
 
-const { mockCanScore, mockIncrementUsage, mockCanNotify } = vi.hoisted(() => ({
+const { mockCanScore, mockIncrementUsage } = vi.hoisted(() => ({
   mockCanScore: vi.fn(),
   mockIncrementUsage: vi.fn(),
-  mockCanNotify: vi.fn(),
 }));
-
-const { mockQueueAdd } = vi.hoisted(() => ({ mockQueueAdd: vi.fn() }));
 
 vi.mock('@ai-job-market-intelligence/db', () => ({
   prisma: {
@@ -49,19 +46,9 @@ vi.mock('@ai-job-market-intelligence/ai', () => ({
   scoreJob: mockScoreJob,
 }));
 
-vi.mock('@ai-job-market-intelligence/shared/queue', () => ({
-  getNotifyEmailQueue: () => ({ add: mockQueueAdd }),
-  NOTIFY_EMAIL_JOB_OPTS: {},
-}));
-
-vi.mock('@ai-job-market-intelligence/shared/constants', () => ({
-  HIGH_MATCH_SCORE_THRESHOLD: 80,
-}));
-
 vi.mock('../../billing/usage.js', () => ({
   canScore: mockCanScore,
   incrementUsage: mockIncrementUsage,
-  canNotify: mockCanNotify,
 }));
 
 vi.mock('../../logger.js', () => ({
@@ -98,8 +85,6 @@ beforeEach(() => {
   mockScoreJob.mockReset();
   mockCanScore.mockReset();
   mockIncrementUsage.mockReset();
-  mockCanNotify.mockReset();
-  mockQueueAdd.mockReset();
 
   mockCanScore.mockResolvedValue(true);
   mockFindProfile.mockResolvedValue({
@@ -114,7 +99,6 @@ beforeEach(() => {
   mockScoreJob.mockResolvedValue(scoringResult);
   mockFindScore.mockResolvedValue(null);
   mockUpsertScore.mockResolvedValue({});
-  mockCanNotify.mockResolvedValue(true);
 });
 
 describe('processScoringMatch', () => {
@@ -165,29 +149,13 @@ describe('processScoringMatch', () => {
     expect(mockIncrementUsage).not.toHaveBeenCalled();
   });
 
-  it('enqueues a notification for a high-scoring APPLY decision on a Pro user', async () => {
-    await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
-
-    expect(mockQueueAdd).toHaveBeenCalledWith(
-      'notify',
-      { jobId: 'job-1', userId: 'user-1' },
-      expect.objectContaining({ jobId: 'notify:job-1:user-1' }),
-    );
-  });
-
-  it('does not notify a Free user even with a high APPLY score', async () => {
-    mockCanNotify.mockResolvedValue(false);
-
-    await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
-
-    expect(mockQueueAdd).not.toHaveBeenCalled();
-  });
-
-  it('does not notify when the score is below the high-match threshold', async () => {
-    mockScoreJob.mockResolvedValue({ ...scoringResult, score: 79 });
-
-    await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
-
-    expect(mockQueueAdd).not.toHaveBeenCalled();
+  // v2-scope.md §2 decision #2/§8 Epic 12.3: the instant high-match email
+  // (score >= 80 + APPLY) is retired — scoring_match no longer imports or
+  // touches notify_email at all. A high-scoring APPLY result surfaces later
+  // via Opportunity Discovery in the next day's Career Brief instead.
+  it('does not import or call the notify_email queue for a high-scoring APPLY decision', async () => {
+    await expect(
+      processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' })),
+    ).resolves.toBeUndefined();
   });
 });

@@ -92,8 +92,8 @@ const MIN_FALLBACK_TOKEN_LENGTH = 3;
 // jobs.skills entries are already lowercased/trimmed by AI Job Parsing or
 // extractTagsAsSkills (job-ingestion.md §5.1). SKILL_SYNONYMS doubles as a
 // manually maintained skill whitelist, kept as exact-match only per
-// roadmap.md's "人工维护、不做运行时学习" constraint — no fuzzy/edit-distance
-// matching. Two tiers:
+// roadmap.md's "manually maintained, no runtime learning" constraint — no
+// fuzzy/edit-distance matching. Two tiers:
 //   1. Whole tag exact match (single-word tags, known multi-word phrases
 //      like "machine learning").
 //   2. If that misses, split the tag on -/ /whitespace and exact-match each

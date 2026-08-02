@@ -45,10 +45,23 @@ export const UserResponseSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   onboardingCompleted: z.boolean(),
+  // Daily Career Brief opt-out, defaults to true (v2-scope.md §2 decision
+  // #1) — toggled from /settings/notifications.
+  dailyBriefEnabled: z.boolean(),
   profile: ProfileResponseSchema.nullable(),
   createdAt: z.string().datetime(),
 });
 export type UserResponse = z.infer<typeof UserResponseSchema>;
+
+export const NotificationSettingsUpdateSchema = z.object({
+  dailyBriefEnabled: z.boolean(),
+});
+export type NotificationSettingsUpdate = z.infer<typeof NotificationSettingsUpdateSchema>;
+
+export const NotificationSettingsResponseSchema = z.object({
+  dailyBriefEnabled: z.boolean(),
+});
+export type NotificationSettingsResponse = z.infer<typeof NotificationSettingsResponseSchema>;
 
 // null = never uploaded/linked (distinct from FAILED).
 export const ParseStatusSchema = z.enum(['PENDING', 'SUCCESS', 'FAILED']);

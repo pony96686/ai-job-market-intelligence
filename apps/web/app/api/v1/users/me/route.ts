@@ -21,6 +21,7 @@ export async function GET() {
     id: user.id,
     email: user.email,
     onboardingCompleted: user.onboardingCompleted,
+    dailyBriefEnabled: user.dailyBriefEnabled,
     profile: user.profile
       ? {
           skills: user.profile.skills,

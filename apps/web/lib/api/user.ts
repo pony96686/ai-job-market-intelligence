@@ -1,4 +1,10 @@
-import type { ProfileUpdate, ProfileResponse, UserResponse, CareerProfileResponse } from '@ai-job-market-intelligence/shared';
+import type {
+  ProfileUpdate,
+  ProfileResponse,
+  UserResponse,
+  CareerProfileResponse,
+  NotificationSettingsResponse,
+} from '@ai-job-market-intelligence/shared';
 
 export async function fetchMe(): Promise<UserResponse> {
   const res = await fetch('/api/v1/users/me');
@@ -39,4 +45,17 @@ export async function linkGithub(username: string): Promise<void> {
     body: JSON.stringify({ username }),
   });
   if (!res.ok) throw new Error('Failed to link GitHub account');
+}
+
+export async function updateNotificationSettings(
+  dailyBriefEnabled: boolean,
+): Promise<NotificationSettingsResponse> {
+  const res = await fetch('/api/v1/users/me/notifications', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dailyBriefEnabled }),
+  });
+  if (!res.ok) throw new Error('Failed to update notification settings');
+  const body = await res.json();
+  return body.data;
 }
