@@ -6,7 +6,10 @@ import type { ParsedJobFields } from '@ai-job-market-intelligence/shared/ingesti
 // OpenRouter model slugs require a 'vendor/' prefix — a bare model name gets
 // rejected with a 400 (see packages/ai/src/scoring/llm-score.ts for the same
 // issue and fix).
-const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b:free';
+// Non-reasoning instruct model (see packages/ai/src/scoring/llm-score.ts) —
+// avoids the empty-content failure mode reasoning models like gpt-oss-20b hit
+// when chain-of-thought exhausts the token budget before final content.
+const DEFAULT_LLM_MODEL = 'google/gemma-4-26b-a4b-it:free';
 const PARSE_MAX_RETRIES = 2; // initial attempt + 1 retry
 
 const JobLevelSchema = z.enum(['Junior', 'Mid', 'Senior', 'Staff', 'Principal', 'Unknown']);
@@ -44,7 +47,12 @@ async function callLLM(input: ParseJobFieldsInput): Promise<ParsedJobFields> {
   const response = await getOpenRouterClient().chat.completions.create({
     model: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
     temperature: 0.2,
-    max_tokens: 500,
+    // gpt-oss-20b is a reasoning model: with a tight token budget it can burn
+    // the whole budget on chain-of-thought and return empty `content`.
+    // reasoning_effort caps that spend, and the higher max_tokens leaves
+    // headroom for the final JSON after reasoning.
+    max_tokens: 1000,
+    reasoning_effort: 'low',
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: JOB_PARSING_SYSTEM_PROMPT },
@@ -55,7 +63,11 @@ async function callLLM(input: ParseJobFieldsInput): Promise<ParsedJobFields> {
     ],
   });
 
-  const content = response.choices[0]?.message.content;
+  const message = response.choices[0]?.message;
+  // Some free OpenRouter models put their answer in a non-standard
+  // `reasoning` field and leave `content` null instead of respecting
+  // response_format — fall back to it before giving up.
+  const content = message?.content ?? (message as { reasoning?: string } | undefined)?.reasoning;
   if (!content) throw new Error('LLM returned empty response');
 
   return JobParseOutputSchema.parse(JSON.parse(content));
