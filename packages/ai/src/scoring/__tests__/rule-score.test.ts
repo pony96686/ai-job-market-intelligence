@@ -60,6 +60,23 @@ describe('computeRuleScore', () => {
     expect(computeRuleScore(profile, job)).toBe(20); // 0 (skill) + 5 (exp, far) + 15 (role)
   });
 
+  it('matches a preferred role via job tags when the title uses a leveling scheme instead', () => {
+    // Title alone ("Engineer III") wouldn't match "Backend Engineer", but the
+    // hyphenated tag "Backend-Engineer" normalizes to "backend engineer" and
+    // is found inside "senior backend engineer".
+    const profile = {
+      ...baseProfile,
+      experienceYears: 100,
+      preferredRoles: ['Senior Backend Engineer'],
+    };
+    const leveledJob = {
+      ...job,
+      title: 'Software Development Engineer III - Agency Experience',
+      tags: ['Full-Stack-Developer', 'Backend-Engineer', 'Frontend-Engineer', 'Software-Engineer'],
+    };
+    expect(computeRuleScore(profile, leveledJob)).toBe(20); // 0 (skill) + 5 (exp, far) + 15 (role)
+  });
+
   it('deducts the region mismatch penalty from the additive score', () => {
     // Same as the role-match case (20), minus the 20-point region penalty -> 0 (clamped)
     const profile = {

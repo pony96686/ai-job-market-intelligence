@@ -79,7 +79,7 @@ const scoringResult = {
   llmScore: 85,
   embeddingScore: 80,
   ruleScore: 80,
-  scoringVersion: 'v2' as const,
+  scoringVersion: 'v3' as const,
 };
 
 function makeJob(data: { jobId: string; userId: string }) {
@@ -102,7 +102,12 @@ beforeEach(() => {
   mockQueueAdd.mockReset();
 
   mockCanScore.mockResolvedValue(true);
-  mockFindProfile.mockResolvedValue({ userId: 'user-1', skills: ['node'], experienceYears: 5, preferredRoles: [] });
+  mockFindProfile.mockResolvedValue({
+    userId: 'user-1',
+    skills: ['node'],
+    experienceYears: 5,
+    preferredRoles: [],
+  });
   mockFindJob.mockResolvedValue({ id: 'job-1', title: 'Backend Engineer' });
   mockGetJobEmbedding.mockResolvedValue([0.1, 0.2]);
   mockGetProfileEmbedding.mockResolvedValue([0.1, 0.2]);
@@ -125,9 +130,9 @@ describe('processScoringMatch', () => {
   it('throws when the job has no embedding yet', async () => {
     mockGetJobEmbedding.mockResolvedValue(null);
 
-    await expect(processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }))).rejects.toThrow(
-      'has no embedding yet',
-    );
+    await expect(
+      processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' })),
+    ).rejects.toThrow('has no embedding yet');
   });
 
   it('generates and persists a profile embedding when missing', async () => {

@@ -1,4 +1,5 @@
 import type { JobDecision } from '@ai-job-market-intelligence/shared';
+import { CURRENT_SCORING_VERSION } from '@ai-job-market-intelligence/shared/constants';
 import { computeEmbeddingScore } from '../embeddings/similarity';
 import type { JobInput, ProfileInput } from '../types';
 import { computeRuleScore } from './rule-score';
@@ -14,7 +15,7 @@ export interface ScoringResult {
   llmScore: number;
   embeddingScore: number;
   ruleScore: number;
-  scoringVersion: 'v2';
+  scoringVersion: typeof CURRENT_SCORING_VERSION;
 }
 
 // Go straight to SKIP without calling the LLM when both embedding and rule
@@ -34,13 +35,14 @@ export async function scoreJob(
     return {
       score: Math.round(0.4 * embeddingScore + 0.6 * ruleScore),
       decision: 'SKIP',
-      reasoning: 'Low semantic and rule-based match. Skills and experience do not align with this role.',
+      reasoning:
+        'Low semantic and rule-based match. Skills and experience do not align with this role.',
       strengths: [],
       skillGap: [],
       llmScore: 0,
       embeddingScore,
       ruleScore,
-      scoringVersion: 'v2',
+      scoringVersion: CURRENT_SCORING_VERSION,
     };
   }
 
@@ -52,13 +54,14 @@ export async function scoreJob(
     return {
       score: finalScore,
       decision: toDecision(finalScore),
-      reasoning: 'AI analysis temporarily unavailable. Score based on skill and experience matching.',
+      reasoning:
+        'AI analysis temporarily unavailable. Score based on skill and experience matching.',
       strengths: [],
       skillGap: [],
       llmScore: ruleScore,
       embeddingScore,
       ruleScore,
-      scoringVersion: 'v2',
+      scoringVersion: CURRENT_SCORING_VERSION,
     };
   }
 
@@ -73,6 +76,6 @@ export async function scoreJob(
     llmScore: llmResult.score,
     embeddingScore,
     ruleScore,
-    scoringVersion: 'v2',
+    scoringVersion: CURRENT_SCORING_VERSION,
   };
 }

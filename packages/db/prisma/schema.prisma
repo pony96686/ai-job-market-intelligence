@@ -330,7 +330,7 @@ model JobScore {
   llmScore       Float       @map("llm_score")
   embeddingScore Float       @map("embedding_score")
   ruleScore      Float       @map("rule_score")
-  scoringVersion String      @default("v2") @map("scoring_version")
+  scoringVersion String      @default("v3") @map("scoring_version")
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
 
