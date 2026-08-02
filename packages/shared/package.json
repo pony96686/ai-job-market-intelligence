@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "bullmq": "^5.81.2",
-    "fast-xml-parser": "^4.5.0",
+    "fast-xml-parser": "^5.10.1",
     "html-to-text": "^10.0.0",
     "i18n-iso-countries": "^7.14.0",
     "ioredis": "^5.4.1",
