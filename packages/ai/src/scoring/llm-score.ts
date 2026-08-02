@@ -25,7 +25,12 @@ async function callLLM(profile: ProfileInput, job: JobInput): Promise<LLMScoreRe
   const response = await getOpenRouterClient().chat.completions.create({
     model: process.env.CHAT_MODEL ?? DEFAULT_LLM_MODEL,
     temperature: 0.2,
-    max_tokens: 500,
+    // gpt-oss-20b is a reasoning model: with a tight token budget it can burn
+    // the whole budget on chain-of-thought and return empty `content`.
+    // reasoning_effort caps that spend, and the higher max_tokens leaves
+    // headroom for the final JSON after reasoning.
+    max_tokens: 1000,
+    reasoning_effort: 'low',
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SCORING_SYSTEM_PROMPT },
@@ -33,7 +38,11 @@ async function callLLM(profile: ProfileInput, job: JobInput): Promise<LLMScoreRe
     ],
   });
 
-  const content = response.choices[0]?.message.content;
+  const message = response.choices[0]?.message;
+  // Some free OpenRouter models put their answer in a non-standard
+  // `reasoning` field and leave `content` null instead of respecting
+  // response_format — fall back to it before giving up.
+  const content = message?.content ?? (message as { reasoning?: string } | undefined)?.reasoning;
   if (!content) throw new Error('LLM returned empty response');
 
   const parsed = LLMScoreOutputSchema.parse(JSON.parse(content));
