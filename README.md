@@ -4,7 +4,7 @@
 
 **An AI-driven job market intelligence platform** — aggregates remote job postings from
 compliant data sources, parses them with LLMs into structured fields, and matches them
-against your profile with a hybrid AI scoring model that explains *why* a job fits (and
+against your profile with a hybrid AI scoring model that explains _why_ a job fits (and
 what skills you're missing).
 
 [English](./README.md) | [中文](./README.zh.md)
@@ -67,19 +67,19 @@ AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
 
 ## Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Frontend | Next.js 15 (App Router), TypeScript, shadcn/ui + Tailwind CSS, TanStack Query v5 |
-| Backend | Next.js Route Handlers, Prisma, Zod |
-| Queue / Workers | BullMQ + Redis |
-| Database | PostgreSQL 16 + `pgvector` (job & profile embeddings) |
-| AI | [OpenRouter](https://openrouter.ai) — LLM (`openai/gpt-oss-20b:free`) + embeddings (`nvidia/llama-nemotron-embed-vl-1b-v2:free`), cost-first by design |
-| Auth | Auth.js v5 (Email Magic Link via Resend) |
-| Payments | Stripe (Free / Pro) |
-| i18n | next-intl (`en` default / `zh`) |
-| Testing | Vitest (unit) + Playwright (E2E) |
-| CI | GitHub Actions |
-| Deployment | Railway (single project: Postgres + Redis + Worker + Web) |
+| Layer           | Choice                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend        | Next.js 15 (App Router), TypeScript, shadcn/ui + Tailwind CSS, TanStack Query v5                                                                              |
+| Backend         | Next.js Route Handlers, Prisma, Zod                                                                                                                           |
+| Queue / Workers | BullMQ + Redis                                                                                                                                                |
+| Database        | PostgreSQL 16 + `pgvector` (job & profile embeddings)                                                                                                         |
+| AI              | [OpenRouter](https://openrouter.ai) — LLM (`google/gemma-4-26b-a4b-it:free`) + embeddings (`nvidia/llama-nemotron-embed-vl-1b-v2:free`), cost-first by design |
+| Auth            | Auth.js v5 (Email Magic Link via Resend)                                                                                                                      |
+| Payments        | Stripe (Free / Pro)                                                                                                                                           |
+| i18n            | next-intl (`en` default / `zh`)                                                                                                                               |
+| Testing         | Vitest (unit) + Playwright (E2E)                                                                                                                              |
+| CI              | GitHub Actions                                                                                                                                                |
+| Deployment      | Railway (single project: Postgres + Redis + Worker + Web)                                                                                                     |
 
 ## Architecture
 
@@ -168,15 +168,15 @@ key needed.
 
 ### Common scripts
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Run web + worker in dev mode |
-| `pnpm build` | Build all apps/packages |
+| Command                        | Description                          |
+| ------------------------------ | ------------------------------------ |
+| `pnpm dev`                     | Run web + worker in dev mode         |
+| `pnpm build`                   | Build all apps/packages              |
 | `pnpm lint` / `pnpm typecheck` | Lint / type-check the whole monorepo |
-| `pnpm test` | Run unit tests (Vitest) |
-| `pnpm test:e2e` | Run E2E tests (Playwright) |
-| `pnpm db:migrate` | Apply Prisma migrations (dev) |
-| `pnpm db:studio` | Open Prisma Studio |
+| `pnpm test`                    | Run unit tests (Vitest)              |
+| `pnpm test:e2e`                | Run E2E tests (Playwright)           |
+| `pnpm db:migrate`              | Apply Prisma migrations (dev)        |
+| `pnpm db:studio`               | Open Prisma Studio                   |
 
 ## Deployment
 
