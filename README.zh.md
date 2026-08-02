@@ -47,19 +47,19 @@
 
 ## 技术栈
 
-| 层 | 选型 |
-|---|---|
-| 前端 | Next.js 15（App Router）、TypeScript、shadcn/ui + Tailwind CSS、TanStack Query v5 |
-| 后端 | Next.js Route Handlers、Prisma、Zod |
-| 队列/Worker | BullMQ + Redis |
-| 数据库 | PostgreSQL 16 + `pgvector`（职位/画像向量） |
-| AI | [OpenRouter](https://openrouter.ai) —— LLM（`openai/gpt-oss-20b:free`）+ Embedding（`nvidia/llama-nemotron-embed-vl-1b-v2:free`），成本优先设计 |
-| 认证 | Auth.js v5（Resend Email Magic Link） |
-| 支付 | Stripe（Free / Pro） |
-| 多语言 | next-intl（`en` 默认 / `zh`） |
-| 测试 | Vitest（单元）+ Playwright（E2E） |
-| CI | GitHub Actions |
-| 部署 | Railway（单一项目：Postgres + Redis + Worker + Web） |
+| 层          | 选型                                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 前端        | Next.js 15（App Router）、TypeScript、shadcn/ui + Tailwind CSS、TanStack Query v5                                                                      |
+| 后端        | Next.js Route Handlers、Prisma、Zod                                                                                                                    |
+| 队列/Worker | BullMQ + Redis                                                                                                                                         |
+| 数据库      | PostgreSQL 16 + `pgvector`（职位/画像向量）                                                                                                            |
+| AI          | [OpenRouter](https://openrouter.ai) —— LLM（`google/gemma-4-26b-a4b-it:free`）+ Embedding（`nvidia/llama-nemotron-embed-vl-1b-v2:free`），成本优先设计 |
+| 认证        | Auth.js v5（Resend Email Magic Link）                                                                                                                  |
+| 支付        | Stripe（Free / Pro）                                                                                                                                   |
+| 多语言      | next-intl（`en` 默认 / `zh`）                                                                                                                          |
+| 测试        | Vitest（单元）+ Playwright（E2E）                                                                                                                      |
+| CI          | GitHub Actions                                                                                                                                         |
+| 部署        | Railway（单一项目：Postgres + Redis + Worker + Web）                                                                                                   |
 
 ## 架构
 
@@ -139,15 +139,15 @@ pnpm dev
 
 ### 常用命令
 
-| 命令 | 说明 |
-|---|---|
-| `pnpm dev` | 同时启动 Web + Worker（开发模式） |
-| `pnpm build` | 构建所有 app/package |
+| 命令                           | 说明                               |
+| ------------------------------ | ---------------------------------- |
+| `pnpm dev`                     | 同时启动 Web + Worker（开发模式）  |
+| `pnpm build`                   | 构建所有 app/package               |
 | `pnpm lint` / `pnpm typecheck` | 对整个 Monorepo 做 Lint / 类型检查 |
-| `pnpm test` | 跑单元测试（Vitest） |
-| `pnpm test:e2e` | 跑 E2E 测试（Playwright） |
-| `pnpm db:migrate` | 应用 Prisma migration（开发环境） |
-| `pnpm db:studio` | 打开 Prisma Studio |
+| `pnpm test`                    | 跑单元测试（Vitest）               |
+| `pnpm test:e2e`                | 跑 E2E 测试（Playwright）          |
+| `pnpm db:migrate`              | 应用 Prisma migration（开发环境）  |
+| `pnpm db:studio`               | 打开 Prisma Studio                 |
 
 ## 部署
 

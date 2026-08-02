@@ -6,7 +6,10 @@ import type { ParsedJobFields } from '@ai-job-market-intelligence/shared/ingesti
 // OpenRouter model slugs require a 'vendor/' prefix — a bare model name gets
 // rejected with a 400 (see packages/ai/src/scoring/llm-score.ts for the same
 // issue and fix).
-const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b:free';
+// Non-reasoning instruct model (see packages/ai/src/scoring/llm-score.ts) —
+// avoids the empty-content failure mode reasoning models like gpt-oss-20b hit
+// when chain-of-thought exhausts the token budget before final content.
+const DEFAULT_LLM_MODEL = 'google/gemma-4-26b-a4b-it:free';
 const PARSE_MAX_RETRIES = 2; // initial attempt + 1 retry
 
 const JobLevelSchema = z.enum(['Junior', 'Mid', 'Senior', 'Staff', 'Principal', 'Unknown']);

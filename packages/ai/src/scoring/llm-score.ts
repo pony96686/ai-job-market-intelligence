@@ -4,7 +4,10 @@ import { SCORING_SYSTEM_PROMPT } from '../prompts/scoring-system';
 import { buildScoringUserPrompt } from '../prompts/scoring-user';
 import type { JobInput, ProfileInput } from '../types';
 
-const DEFAULT_LLM_MODEL = 'openai/gpt-oss-20b:free';
+// Non-reasoning instruct model (see packages/ai/src/parsing/parse-job-fields.ts) —
+// avoids the empty-content failure mode reasoning models like gpt-oss-20b hit
+// when chain-of-thought exhausts the token budget before final content.
+const DEFAULT_LLM_MODEL = 'google/gemma-4-26b-a4b-it:free';
 const LLM_MAX_RETRIES = 2; // initial attempt + 1 retry
 
 const LLMScoreOutputSchema = z.object({
