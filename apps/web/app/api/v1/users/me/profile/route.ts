@@ -16,6 +16,12 @@ export async function PUT(request: Request) {
     return apiError('VALIDATION_ERROR', 400, parsed.error.issues);
   }
 
+  const existingUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { onboardingCompleted: true },
+  });
+  const isNewOnboarding = !existingUser?.onboardingCompleted;
+
   const profile = await prisma.userProfile.upsert({
     where: { userId: session.user.id },
     create: { userId: session.user.id, ...parsed.data },
@@ -27,7 +33,7 @@ export async function PUT(request: Request) {
     data: { onboardingCompleted: true },
   });
 
-  await enqueueRescoring(session.user.id);
+  await enqueueRescoring(session.user.id, isNewOnboarding);
 
   const data = ProfileResponseSchema.parse({
     skills: profile.skills,

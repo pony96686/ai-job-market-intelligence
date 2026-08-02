@@ -45,12 +45,23 @@ function experienceScore(years: number, title: string): number {
   return EXPERIENCE_FAR_SCORE;
 }
 
-function roleScore(preferredRoles: string[], title: string): number {
-  const titleLower = title.toLowerCase();
-  const firstWord = titleLower.split(' ')[0] ?? '';
+// Tags carry the bare role family (e.g. "Backend-Engineer") without a
+// seniority modifier, so a preferred role like "Senior Backend Engineer"
+// needs that prefix stripped before it can match — seniority itself is
+// already scored separately by experienceScore.
+const SENIORITY_PREFIX = /^(intern|junior|jr|mid|senior|sr|staff|principal|lead)\s+/i;
+
+// Job titles that use a leveling scheme instead of a role-family word (e.g.
+// "Software Development Engineer III") won't literally contain a preferred
+// role like "Backend Engineer" — but source sites already tag postings with
+// standardized, hyphenated role labels (e.g. "Backend-Engineer"), so the
+// search text includes tags too, normalized to spaces, alongside the title.
+function roleScore(preferredRoles: string[], title: string, tags: string[]): number {
+  const searchText = `${title} ${tags.join(' ')}`.toLowerCase().replace(/[-_]/g, ' ');
+  const firstWord = title.toLowerCase().split(' ')[0] ?? '';
   const matched = preferredRoles.some((role) => {
-    const roleLower = role.toLowerCase();
-    return titleLower.includes(roleLower) || roleLower.includes(firstWord);
+    const roleLower = role.toLowerCase().replace(SENIORITY_PREFIX, '');
+    return searchText.includes(roleLower) || roleLower.includes(firstWord);
   });
   return matched ? ROLE_MATCH_SCORE : 0;
 }
@@ -58,7 +69,7 @@ function roleScore(preferredRoles: string[], title: string): number {
 export function computeRuleScore(profile: ProfileInput, job: JobInput): number {
   const skillScore = matchSkillsScore(profile.skills, job);
   const expScore = experienceScore(profile.experienceYears, job.title);
-  const role = roleScore(profile.preferredRoles, job.title);
+  const role = roleScore(profile.preferredRoles, job.title, job.tags);
   const raw =
     skillScore + expScore + role - regionPenalty(profile, job) - salaryPenalty(profile, job);
   return Math.round(Math.min(100, Math.max(0, raw)));
