@@ -1,6 +1,15 @@
-import { registerLocale, getNames, getAlpha2Codes } from 'i18n-iso-countries';
+// Named imports from this package fail at runtime under Node's native ESM
+// loader (e.g. `node --import tsx`, used by apps/worker's production
+// Dockerfile) — its CJS entry point re-exports via `module.exports = library`
+// (built up through a require() chain), which cjs-module-lexer can't
+// statically resolve into named exports. tsx's own CLI and Vite/vitest are
+// more lenient about this and never surfaced the crash locally. A default
+// import + runtime destructure works under every execution mode.
+import i18nIsoCountries from 'i18n-iso-countries';
 import enLocale from 'i18n-iso-countries/langs/en.json';
 import zhLocale from 'i18n-iso-countries/langs/zh.json';
+
+const { registerLocale, getNames, getAlpha2Codes } = i18nIsoCountries;
 
 registerLocale(enLocale);
 registerLocale(zhLocale);
