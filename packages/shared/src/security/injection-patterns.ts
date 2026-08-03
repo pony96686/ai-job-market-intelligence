@@ -22,7 +22,12 @@ export const INJECTION_PATTERNS: RegExp[] = [
   // Explicit score/output manipulation
   /(must|always)\s+(respond|reply|rate|score)\s+with/i,
   /give\s+(this\s+candidate|this\s+job)\s+a\s+score\s+of/i,
-  /(must|make\s+sure\s+to)\s+(mention|include)\s+the\s+word/i,
+  // Deliberately no trigger-verb prefix (must/please/be sure to/...) — "mention/
+  // include the word X" itself is an unusual enough phrase in a job posting
+  // that requiring a specific preceding verb only creates gaps (a real
+  // instance used "Please mention the word X", which a "must/make sure to"
+  // -only version missed).
+  /\b(mention|include)\s+the\s+word\b/i,
 ];
 
 export function containsInjectionPattern(text: string): boolean {

@@ -1,11 +1,24 @@
 import type { Job } from 'bullmq';
 import { prisma, upsertCompany } from '@ai-job-market-intelligence/db';
-import { getAdapterBySource, passesFilter, probeOfficialApi, currentCadenceBucket } from '@ai-job-market-intelligence/shared/ingestion';
+import {
+  getAdapterBySource,
+  passesFilter,
+  probeOfficialApi,
+  currentCadenceBucket,
+  type NormalizedJob,
+} from '@ai-job-market-intelligence/shared/ingestion';
+import { stripInjectionText } from '@ai-job-market-intelligence/shared/security';
 import type { JobSource } from '@ai-job-market-intelligence/shared';
 import type { AtsSource } from '@ai-job-market-intelligence/shared';
-import { getIngestionParseQueue, INGESTION_PARSE_JOB_OPTS } from '@ai-job-market-intelligence/shared/queue';
+import {
+  getIngestionParseQueue,
+  INGESTION_PARSE_JOB_OPTS,
+} from '@ai-job-market-intelligence/shared/queue';
 import { logger } from '../logger.js';
-import { getIngestionCollectQueue, type IngestionCollectPayload } from '../queues/ingestion-collect.js';
+import {
+  getIngestionCollectQueue,
+  type IngestionCollectPayload,
+} from '../queues/ingestion-collect.js';
 
 // Greenhouse/Lever/Ashby are "per company" sources — their jobs are fanned
 // out from `ats_companies` instead of a single whole-source call.
@@ -28,6 +41,27 @@ function toJobIdSegment(value: string): string {
 
 function isPerCompanySource(source: JobSource): source is AtsSource {
   return PER_COMPANY_SOURCES.includes(source);
+}
+
+// Removes a suspected prompt-injection sentence from the description (see
+// packages/shared/src/security) rather than rejecting the whole posting —
+// most flagged postings are otherwise-real jobs with one injected sentence
+// appended, not fabricated end to end.
+function sanitizeNormalized(
+  normalized: NormalizedJob,
+  source: JobSource,
+  traceId: string,
+): NormalizedJob {
+  const { cleaned, stripped } = stripInjectionText(normalized.description);
+  if (!stripped) return normalized;
+
+  logger.info({
+    event: 'ingestion_injection_stripped',
+    source,
+    externalId: normalized.externalId,
+    traceId,
+  });
+  return { ...normalized, description: cleaned };
 }
 
 // This processor only fetches + normalizes + filters, then hands each
@@ -53,7 +87,10 @@ export async function processIngestionCollect(job: Job<IngestionCollectPayload>)
 
 // The 30min trigger job — pick this cycle's cadence_bucket slice of ACTIVE
 // companies for `source` and fan out one sub-task each.
-async function processBatchTrigger(job: Job<IngestionCollectPayload>, source: AtsSource): Promise<void> {
+async function processBatchTrigger(
+  job: Job<IngestionCollectPayload>,
+  source: AtsSource,
+): Promise<void> {
   const traceId = job.id!;
   const bucket = currentCadenceBucket();
 
@@ -67,17 +104,31 @@ async function processBatchTrigger(job: Job<IngestionCollectPayload>, source: At
     await queue.add(
       'collect',
       { source, companySlug: slug },
-      { jobId: `ingestion-collect:${source}:${slug}`, attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+      {
+        jobId: `ingestion-collect:${source}:${slug}`,
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
+      },
     );
   }
 
-  logger.info({ event: 'ingestion_batch_trigger', source, traceId, bucket, companiesFanned: companies.length });
+  logger.info({
+    event: 'ingestion_batch_trigger',
+    source,
+    traceId,
+    bucket,
+    companiesFanned: companies.length,
+  });
 }
 
 // One company's worth of postings — fetch, normalize, filter, enqueue parse,
 // detect closures, and update ats_companies health (lastSuccessAt /
 // consecutiveFailures / INACTIVE demotion).
-async function processCompanyCollect(job: Job<IngestionCollectPayload>, source: AtsSource, companySlug: string): Promise<void> {
+async function processCompanyCollect(
+  job: Job<IngestionCollectPayload>,
+  source: AtsSource,
+  companySlug: string,
+): Promise<void> {
   const traceId = job.id!;
   const startedAt = Date.now();
 
@@ -106,17 +157,21 @@ async function processCompanyCollect(job: Job<IngestionCollectPayload>, source: 
   const queue = getIngestionParseQueue();
 
   for (const raw of rawJobs) {
-    const normalized = adapter.normalize(raw);
+    let normalized = adapter.normalize(raw);
     if (!normalized || !passesFilter(normalized)) {
       skipped++;
       continue;
     }
+    normalized = sanitizeNormalized(normalized, source, traceId);
 
     currentExternalIds.add(normalized.externalId);
     await queue.add(
       'parse',
       { normalized, companyId: company.id },
-      { ...INGESTION_PARSE_JOB_OPTS, jobId: `parse:${source}:${toJobIdSegment(normalized.externalId)}` },
+      {
+        ...INGESTION_PARSE_JOB_OPTS,
+        jobId: `parse:${source}:${toJobIdSegment(normalized.externalId)}`,
+      },
     );
     queued++;
   }
@@ -124,7 +179,12 @@ async function processCompanyCollect(job: Job<IngestionCollectPayload>, source: 
   await markClosedJobs(source, companySlug, currentExternalIds);
   await prisma.atsCompany.update({
     where: { source_slug: { source, slug: companySlug } },
-    data: { status: 'ACTIVE', consecutiveFailures: 0, lastSuccessAt: new Date(), lastCheckedAt: new Date() },
+    data: {
+      status: 'ACTIVE',
+      consecutiveFailures: 0,
+      lastSuccessAt: new Date(),
+      lastCheckedAt: new Date(),
+    },
   });
 
   logger.info({
@@ -142,7 +202,11 @@ async function processCompanyCollect(job: Job<IngestionCollectPayload>, source: 
 // Only per-company sources can tell "still listed" from "removed" —
 // anything ACTIVE in our DB for this company that wasn't in this crawl's
 // result set just got taken down at the source.
-async function markClosedJobs(source: AtsSource, companySlug: string, currentExternalIds: Set<string>): Promise<void> {
+async function markClosedJobs(
+  source: AtsSource,
+  companySlug: string,
+  currentExternalIds: Set<string>,
+): Promise<void> {
   await prisma.job.updateMany({
     where: {
       source,
@@ -167,7 +231,10 @@ async function recordCompanyProbeFailure(source: AtsSource, companySlug: string)
 
 // RemoteOK/Himalayas are aggregators — one call covers every company, no
 // ats_companies fan-out involved.
-async function processAggregatorCollect(job: Job<IngestionCollectPayload>, source: JobSource): Promise<void> {
+async function processAggregatorCollect(
+  job: Job<IngestionCollectPayload>,
+  source: JobSource,
+): Promise<void> {
   const traceId = job.id!;
   const startedAt = Date.now();
 
@@ -185,17 +252,21 @@ async function processAggregatorCollect(job: Job<IngestionCollectPayload>, sourc
   const queue = getIngestionParseQueue();
 
   for (const raw of rawJobs) {
-    const normalized = adapter.normalize(raw);
+    let normalized = adapter.normalize(raw);
     if (!normalized || !passesFilter(normalized)) {
       skipped++;
       continue;
     }
+    normalized = sanitizeNormalized(normalized, source, traceId);
 
     const company = await upsertCompany(normalized.company);
     await queue.add(
       'parse',
       { normalized, companyId: company.id },
-      { ...INGESTION_PARSE_JOB_OPTS, jobId: `parse:${source}:${toJobIdSegment(normalized.externalId)}` },
+      {
+        ...INGESTION_PARSE_JOB_OPTS,
+        jobId: `parse:${source}:${toJobIdSegment(normalized.externalId)}`,
+      },
     );
     queued++;
   }
