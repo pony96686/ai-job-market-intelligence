@@ -22,8 +22,8 @@ export interface CountryOption {
 }
 
 // Full ISO 3166-1 country list localized for the given UI locale, sorted by
-// display name — used by CountrySelect (frontend-spec.md's CountrySelect
-// component) to render a searchable list of countries.
+// display name — used by the CountrySelect
+// component to render a searchable list of countries.
 export function getCountryOptions(locale: SupportedCountryLocale): CountryOption[] {
   // 'alias' gives the common short name (e.g. "United States") instead of
   // the default official/formal name ("United States of America").

@@ -75,7 +75,7 @@ export function computeRuleScore(profile: ProfileInput, job: JobInput): number {
   return Math.round(Math.min(100, Math.max(0, raw)));
 }
 
-// R4 region preference (ai-scoring.md §4): a ranking-only deduction, not a
+// R4 region preference: a ranking-only deduction, not a
 // veto — preferredCountries expresses where the user *wants* to work, not
 // where they're eligible to work, so a mismatch still gets scored normally
 // and shown, just ranked lower. The user fills in actual countries (not an
@@ -98,7 +98,7 @@ export function normalizeToAnnualUSD(amount: number, period: SalaryPeriod | null
   return amount;
 }
 
-// R5 salary preference (ai-scoring.md §4): a ranking-only deduction, not a
+// R5 salary preference: a ranking-only deduction, not a
 // veto — job salary data is incomplete (only sourceStructured provides it
 // natively; everything else is a best-effort LLM extraction), so an unknown
 // job salary is treated as "unknown", not "doesn't meet expectations".

@@ -13,7 +13,7 @@ import {
 import { createCareerCoachToolExecutor } from '@/lib/career-coach-tools';
 import { apiSuccess, apiError } from '@/lib/api-response';
 
-// Context window cap (v2-scope.md §9.3: bounded context per call, not the
+// Context window cap (bounded context per call, not the
 // full history) — keeps cost bounded as a conversation grows, at the
 // expense of long-range memory the coach doesn't need for market-data Q&A
 // anyway.
@@ -47,10 +47,10 @@ export async function GET() {
   return apiSuccess(data);
 }
 
-// Hard delete, no conversationId grouping/multi-thread (v2-scope.md §2
-// decision #6) — only career_coach_messages, never touches agent_handoffs
-// (a separate, V3-only record of "what the agent surfaced when", see
-// database-schema.md §12.2): AgentHandoffTimeline renders straight from
+// Hard delete, no conversationId grouping/multi-thread
+// — only career_coach_messages, never touches agent_handoffs
+// (a separate, V3-only record of "what the agent surfaced when"):
+// AgentHandoffTimeline renders straight from
 // agent_handoffs.context and doesn't depend on the chat messages it
 // references still existing, so clearing history here never breaks it.
 export async function DELETE() {

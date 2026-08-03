@@ -5,7 +5,7 @@ import {
 
 // 01:00 UTC — ahead of career_agent_daily (01:30 UTC) which reads this
 // data, and clear of the existing ingestion cron windows (Himalayas 03:00
-// UTC, company_discovery Monday 04:00 UTC), see v2-scope.md §2 decision #5.
+// UTC, company_discovery Monday 04:00 UTC).
 const DAILY_1AM_UTC = '0 1 * * *';
 
 export async function scheduleSkillTrendAggregateCron(): Promise<void> {

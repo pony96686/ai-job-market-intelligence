@@ -9,8 +9,8 @@ import { CURRENT_SCORING_VERSION } from '@ai-job-market-intelligence/shared/cons
 // Resume/GitHub parsing only ever completes for a user whose UserProfile
 // already exists (onboardingCompleted was already flipped true by the
 // initial PUT /users/me/profile submission before this async job runs), so
-// this is always the "existing user updated their profile" case from
-// ai-scoring.md §7.1 — never the "new user onboarding" case, which is
+// this is always the "existing user updated their profile" case — never
+// the "new user onboarding" case, which is
 // handled separately in apps/web/lib/queue.ts.
 //
 // embedding: { isNot: null } excludes jobs whose embedding hasn't landed yet

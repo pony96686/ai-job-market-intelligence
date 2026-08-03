@@ -14,7 +14,7 @@ import { logger } from '../logger.js';
 
 const TOP_GROWING_SKILLS_LIMIT = 5;
 const HOT_COMPANIES_LIMIT = 5;
-// Opportunity Discovery (v2-scope.md §8 Epic 12.3): replaces V1's instant
+// Opportunity Discovery: replaces V1's instant
 // notify_email trigger (score >= 80). scoring_match no longer sends email
 // directly — high-match jobs surface here, in the next day's brief instead.
 const OPPORTUNITY_SCORE_THRESHOLD = 85;

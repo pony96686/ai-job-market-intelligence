@@ -140,7 +140,7 @@ describe('runCareerCoachTurn', () => {
     await expect(runCareerCoachTurn(history, vi.fn())).rejects.toThrow('some other API error');
   });
 
-  // Epic 5.12 (mvp-scope.md §8) / ai-scoring.md §8.5: falls straight to the
+  // Falls straight to the
   // fallback check on a 429 (no point retrying a daily quota exhaustion),
   // then uses CAREER_COACH_MODEL_FALLBACK once configured and within budget.
   it('uses CAREER_COACH_MODEL_FALLBACK after a 429, when configured', async () => {

@@ -1,10 +1,22 @@
 import type { JobDecision } from '@ai-job-market-intelligence/shared';
 import { CURRENT_SCORING_VERSION } from '@ai-job-market-intelligence/shared/constants';
+import { containsInjectionPattern } from '@ai-job-market-intelligence/shared/security';
 import { computeEmbeddingScore } from '../embeddings/similarity';
 import type { JobInput, ProfileInput } from '../types';
 import { computeRuleScore } from './rule-score';
-import { computeLLMScore } from './llm-score';
+import { computeLLMScore, type LLMScoreResult } from './llm-score';
 import { toDecision } from './decision';
+
+// The ingestion-time filter is the "before" line of defense — this is the
+// "after" backstop in case some new injection technique slips past it.
+// Reuses the same pattern list rather than maintaining a second one.
+function isSuspectedInjection(result: LLMScoreResult): boolean {
+  return (
+    containsInjectionPattern(result.reasoning) ||
+    result.strengths.some(containsInjectionPattern) ||
+    result.skillGap.some(containsInjectionPattern)
+  );
+}
 
 export interface ScoringResult {
   score: number;
@@ -47,9 +59,23 @@ export async function scoreJob(
   }
 
   const llmResult = await computeLLMScore(profile, job);
+  const injectionSuspected = llmResult !== null && isSuspectedInjection(llmResult);
 
-  if (!llmResult) {
-    // Fall back to rule_score when the LLM fails entirely
+  if (injectionSuspected) {
+    // Discard the (possibly manipulated) output and log for manual review —
+    // don't retry the LLM (the same payload would likely get poisoned again)
+    // and don't surface anything to the user, so as not to tip off whoever
+    // is probing the filter.
+    console.warn({
+      event: 'llm_output_injection_suspected',
+      title: job.title,
+      company: job.company,
+    });
+  }
+
+  if (!llmResult || injectionSuspected) {
+    // Fall back to rule_score when the LLM fails entirely, or its output is
+    // discarded as suspected prompt injection
     const finalScore = Math.round(0.6 * ruleScore + 0.4 * embeddingScore);
     return {
       score: finalScore,

@@ -1,3 +1,4 @@
+import { containsInjectionPattern } from '../security';
 import type { NormalizedJob } from './types';
 
 const MAX_POSTED_AGE_DAYS = 90;
@@ -23,7 +24,7 @@ const EXCLUDED_TAGS = new Set([
   'radiology',
 ]);
 
-// Shared with the mvp-scope.md §8 Epic 4.16 one-time backfill (apps/worker/
+// Shared with the one-time backfill script (apps/worker/
 // scripts/backfill-remove-nontech-jobs.ts), which re-applies this exact rule
 // against already-ingested jobs, not just new ones going forward.
 export function hasExcludedTag(tags: string[]): boolean {
@@ -42,6 +43,9 @@ export function passesFilter(job: NormalizedJob): boolean {
   if (!REMOTE_FRIENDLY_SOURCES.has(job.source) && !REMOTE_LOCATION_PATTERN.test(job.location))
     return false;
   if (hasExcludedTag(job.tags)) return false;
+  // Screen out postings crafted to prompt-inject the LLM calls this
+  // description is later fed to (AI Job Parsing, Scoring).
+  if (containsInjectionPattern(job.description)) return false;
 
   return true;
 }

@@ -4,7 +4,7 @@ import { CURRENT_SCORING_VERSION } from '@ai-job-market-intelligence/shared/cons
 
 const RESCORING_WINDOW_DAYS = 7;
 
-// ai-scoring.md §7.1 distinguishes two triggers with different criteria:
+// Two triggers exist with different criteria:
 // a brand-new user completing onboarding gets only the last 7 days of jobs
 // (scoring their entire historical backlog on day one would be wasteful and
 // slow), while an existing user updating their profile gets every job that

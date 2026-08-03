@@ -14,7 +14,8 @@
     "./queue": "./src/queue/index.ts",
     "./ingestion": "./src/ingestion/index.ts",
     "./regions": "./src/regions/index.ts",
-    "./skills": "./src/skills/index.ts"
+    "./skills": "./src/skills/index.ts",
+    "./security": "./src/security/index.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",

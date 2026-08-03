@@ -63,7 +63,7 @@ async function callLLM(
 }
 
 // Returns null when the free model (and, if configured and within budget, the
-// paid fallback per ai-scoring.md §8.5) both fail — the caller falls back to
+// paid fallback) both fail — the caller falls back to
 // rule_score in that case.
 export async function computeLLMScore(
   profile: ProfileInput,

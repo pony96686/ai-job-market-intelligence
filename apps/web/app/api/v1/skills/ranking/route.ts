@@ -5,7 +5,7 @@ import {
 } from '@ai-job-market-intelligence/shared';
 import { apiSuccess, apiError } from '@/lib/api-response';
 
-// Public — market-wide data, not user-specific (mvp-scope.md §8 Epic 10.4).
+// Public — market-wide data, not user-specific.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const parsed = SkillRankingQuerySchema.safeParse(Object.fromEntries(searchParams));
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
       periodEnd: latest.periodEnd,
       // growing/declining need a real growthPercent — skills where it's
       // still null (not enough data yet) are filtered out rather than
-      // shown with a misleading value, see mvp-scope.md §8 Epic 10.4.
+      // shown with a misleading value.
       ...(sort !== 'count' && { growthPercent: { not: null } }),
     },
     include: { skill: true },

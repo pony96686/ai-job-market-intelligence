@@ -5,11 +5,11 @@ import {
 } from '@ai-job-market-intelligence/shared';
 import { apiSuccess, apiError } from '@/lib/api-response';
 
-// Snapshots are kept indefinitely (database-schema.md §11.4) — cap how much
+// Snapshots are kept indefinitely — cap how much
 // history a single response returns so it doesn't grow unbounded forever.
 const MAX_SERIES_POINTS = 180;
 
-// Public — market-wide data, not user-specific (mvp-scope.md §8 Epic 10.4).
+// Public — market-wide data, not user-specific.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const parsed = SkillTrendQuerySchema.safeParse(Object.fromEntries(searchParams));

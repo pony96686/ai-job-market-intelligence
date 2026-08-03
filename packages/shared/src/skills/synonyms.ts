@@ -1,6 +1,6 @@
-// Manually maintained synonym → canonical slug map (roadmap.md §1.1: kept
+// Manually maintained synonym → canonical slug map, kept
 // human-curated rather than learned at runtime, to avoid dirty data
-// polluting the ranking). Only covers common variant spellings actually
+// polluting the ranking. Only covers common variant spellings actually
 // worth merging — an unmapped skill still works fine, it just won't be
 // merged with any of its variants.
 export const SKILL_SYNONYMS: Record<string, string> = {

@@ -3,7 +3,7 @@ import { QUEUE_NAMES } from '../constants/queues';
 import { getQueueConnection } from './connection';
 
 // Whole-table sweep triggered by cron — fans out one career_brief_generate
-// job per eligible user, no per-run parameters needed (v2-scope.md §7).
+// job per eligible user, no per-run parameters needed.
 export type CareerAgentDailyPayload = Record<string, never>;
 
 export const CAREER_AGENT_DAILY_JOB_OPTS: JobsOptions = {

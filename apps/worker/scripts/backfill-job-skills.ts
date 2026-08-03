@@ -1,7 +1,7 @@
 import { prisma } from '@ai-job-market-intelligence/db';
 import { parseJobFields, extractTagsAsSkills } from '@ai-job-market-intelligence/ai';
 
-// One-time backfill for mvp-scope.md §8 Epic 4.15: jobs ingested before
+// One-time backfill: jobs ingested before
 // `jobs.skills` was persisted have skills=[] even though AI Job Parsing (or
 // extractTagsAsSkills for sourceStructured sources) already produced a real
 // skill list at ingestion time — recompute and UPDATE only that column.

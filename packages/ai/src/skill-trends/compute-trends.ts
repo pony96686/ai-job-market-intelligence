@@ -16,7 +16,7 @@ export interface SkillTrendSnapshotResult {
   growthPercent: number | null;
 }
 
-// 30/90/365-day windows, see roadmap.md §1.1.
+// 30/90/365-day windows.
 const WINDOW_DAYS = [30, 90, 365] as const;
 // Below this sample size (or when the prior same-length window has no data
 // at all, i.e. the pipeline hasn't been running long enough to cover two
@@ -31,8 +31,7 @@ function startOfUTCDay(date: Date): Date {
 
 // Pure function: absolute mention counts always compute (available from day
 // one of ingestion); growth rate only when both windows have enough data —
-// absolute-count-first, growth-rate-as-progressive-enhancement, see
-// mvp-scope.md §8 Epic 10.3/roadmap.md §1.1.
+// absolute-count-first, growth-rate-as-progressive-enhancement.
 export function computeSkillTrendSnapshots(
   jobs: JobSkillsRecord[],
   now: Date,

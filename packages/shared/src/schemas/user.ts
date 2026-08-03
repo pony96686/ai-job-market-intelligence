@@ -15,9 +15,9 @@ export const ProfileUpdateSchema = z.object({
   skills: z.array(z.string().min(1).max(50)).min(1).max(50),
   experienceYears: z.number().int().min(0).max(50),
   preferredRoles: z.array(z.string().min(1).max(100)).min(1).max(10),
-  // Omitted/empty = no region preference, see api-spec.md §4.2.
+  // Omitted/empty = no region preference.
   preferredCountries: z.array(CountryCodeSchema).max(20).optional(),
-  // Omitted/null = no salary preference, see api-spec.md §4.2.
+  // Omitted/null = no salary preference.
   expectedSalaryMin: z.number().int().positive().nullable().optional(),
 });
 export type ProfileUpdate = z.infer<typeof ProfileUpdateSchema>;
@@ -45,8 +45,8 @@ export const UserResponseSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   onboardingCompleted: z.boolean(),
-  // Daily Career Brief opt-out, defaults to true (v2-scope.md §2 decision
-  // #1) — toggled from /settings/notifications.
+  // Daily Career Brief opt-out, defaults to true — toggled from
+  // /settings/notifications.
   dailyBriefEnabled: z.boolean(),
   profile: ProfileResponseSchema.nullable(),
   createdAt: z.string().datetime(),

@@ -89,7 +89,7 @@ export function CareerCoachView() {
   }
 
   // Hard delete, irreversible — no undo, no conversationId/multi-thread
-  // concept (v2-scope.md §2 decision #6).
+  // concept.
   async function handleClear() {
     setIsClearing(true);
     try {

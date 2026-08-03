@@ -11,7 +11,7 @@ import { apiSuccess, apiError } from '@/lib/api-response';
 // set), so pre-computing a snapshot for every possible role isn't practical.
 const MAX_HEATMAP_SKILLS = 20;
 
-// Public — market-wide data, not user-specific (mvp-scope.md §8 Epic 10.4).
+// Public — market-wide data, not user-specific.
 // One role per call — the frontend calls this once per role in a fixed
 // list and assembles the skill x role matrix client-side.
 export async function GET(request: Request) {

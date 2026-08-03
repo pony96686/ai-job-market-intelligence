@@ -87,8 +87,7 @@ async function getSalaryRangeTool(args: Record<string, unknown>): Promise<unknow
 
 // Tool execution needs Prisma, which packages/ai deliberately doesn't
 // depend on — this is the DB-backed implementation of the tool contract
-// runCareerCoachTurn calls into, scoped to the requesting user
-// (v2-scope.md §8 Epic 12.4).
+// runCareerCoachTurn calls into, scoped to the requesting user.
 export function createCareerCoachToolExecutor(userId: string): CareerCoachToolExecutor {
   return async ({ name, arguments: args }) => {
     switch (name) {
