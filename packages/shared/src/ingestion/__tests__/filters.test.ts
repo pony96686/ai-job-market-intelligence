@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { passesFilter, hasExcludedTag } from '../filters';
+import { passesFilter, hasExcludedTag, hasExcludedTitleKeyword } from '../filters';
 import type { NormalizedJob } from '../types';
 
 function makeJob(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
@@ -63,6 +63,35 @@ describe('passesFilter', () => {
   it('accepts a job with no postedAt', () => {
     expect(passesFilter(makeJob({ postedAt: null }))).toBe(true);
   });
+
+  // Greenhouse/Lever/Ashby never provide native tags, so this is the only
+  // signal F6 has for them — real-world examples pulled from an Ashby data
+  // quality audit.
+  it('rejects non-tech titles even with empty tags (Greenhouse/Lever/Ashby have none natively)', () => {
+    expect(
+      passesFilter(makeJob({ source: 'ASHBY', tags: [], title: 'Strategic Finance Lead' })),
+    ).toBe(false);
+    expect(
+      passesFilter(makeJob({ source: 'ASHBY', tags: [], title: 'Sr. Sales Enablement Manager' })),
+    ).toBe(false);
+    expect(
+      passesFilter(
+        makeJob({ source: 'ASHBY', tags: [], title: 'Chief of Staff, Care Transformation' }),
+      ),
+    ).toBe(false);
+    expect(passesFilter(makeJob({ source: 'ASHBY', tags: [], title: 'Product Designer' }))).toBe(
+      false,
+    );
+  });
+
+  it('does not false-positive on legitimate engineering titles containing "design"', () => {
+    expect(
+      passesFilter(makeJob({ source: 'ASHBY', tags: [], title: 'Design Systems Engineer' })),
+    ).toBe(true);
+    expect(
+      passesFilter(makeJob({ source: 'ASHBY', tags: [], title: 'Software Design Engineer' })),
+    ).toBe(true);
+  });
 });
 
 // Exported for reuse by the one-time backfill script
@@ -72,5 +101,23 @@ describe('hasExcludedTag', () => {
   it('matches case-insensitively', () => {
     expect(hasExcludedTag(['Radiology'])).toBe(true);
     expect(hasExcludedTag(['node', 'typescript'])).toBe(false);
+  });
+});
+
+// Exported for reuse by the one-time backfill script
+// (apps/worker/scripts/backfill-remove-nontech-titles.ts).
+describe('hasExcludedTitleKeyword', () => {
+  it('matches on word boundaries, case-insensitively', () => {
+    expect(hasExcludedTitleKeyword('Head of Viral Social')).toBe(false); // "social" alone isn't listed
+    expect(hasExcludedTitleKeyword('Social Media Manager')).toBe(true);
+    expect(hasExcludedTitleKeyword('SALES Engineer')).toBe(true);
+  });
+
+  it('does not match "designer" as a substring of an unrelated word', () => {
+    expect(hasExcludedTitleKeyword('Redesigner')).toBe(false);
+  });
+
+  it('returns false for ordinary engineering titles', () => {
+    expect(hasExcludedTitleKeyword('Senior Backend Engineer')).toBe(false);
   });
 });

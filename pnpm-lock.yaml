@@ -221,6 +221,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@ai-job-market-intelligence/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@ai-job-market-intelligence/shared':
         specifier: workspace:*
         version: link:../shared

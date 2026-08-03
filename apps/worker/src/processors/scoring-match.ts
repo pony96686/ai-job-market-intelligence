@@ -7,8 +7,19 @@ import {
 } from '@ai-job-market-intelligence/db';
 import { buildProfileText, generateEmbedding, scoreJob } from '@ai-job-market-intelligence/ai';
 import type { ScoringMatchPayload } from '@ai-job-market-intelligence/shared/queue';
+import {
+  getAgentHandoffQueue,
+  AGENT_HANDOFF_JOB_OPTS,
+} from '@ai-job-market-intelligence/shared/queue';
 import { canScore, incrementUsage } from '../billing/usage.js';
 import { logger } from '../logger.js';
+
+// Deliberately higher than the >=85 Opportunity Discovery threshold (which
+// summarizes into the next day's Career Brief) — this triggers a real-time
+// agent handoff instead of waiting for the daily digest, reserved for
+// matches strong enough to justify an immediate, proactive Career Coach
+// message.
+const AGENT_HANDOFF_SCORE_THRESHOLD = 90;
 
 export async function processScoringMatch(job: Job<ScoringMatchPayload>): Promise<void> {
   const { jobId, userId } = job.data;
@@ -67,5 +78,14 @@ export async function processScoringMatch(job: Job<ScoringMatchPayload>): Promis
 
   // Instant high-match email (score >= 80 + APPLY) is retired — high-match
   // jobs now surface via Opportunity Discovery in the next day's Career
-  // Brief instead.
+  // Brief instead. A score this high specifically (>=90) still gets a
+  // real-time reaction, just via an agent handoff instead of an email — see
+  // AGENT_HANDOFF_SCORE_THRESHOLD above.
+  if (result.score >= AGENT_HANDOFF_SCORE_THRESHOLD) {
+    await getAgentHandoffQueue().add(
+      'handoff',
+      { jobId, userId, matchScore: result.score },
+      { ...AGENT_HANDOFF_JOB_OPTS, jobId: `handoff:${jobId}:${userId}` },
+    );
+  }
 }

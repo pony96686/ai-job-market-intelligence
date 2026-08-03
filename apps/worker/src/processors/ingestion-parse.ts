@@ -37,14 +37,24 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
   const contentHash = computeContentHash(normalized);
 
   // Same content as last crawl → only metadata needs a touch, skip
-  // re-running AI Job Parsing + embedding + dedup entirely — but only if the
-  // embedding actually made it to the DB. If a prior attempt's
-  // upsertJobEmbedding write failed after the job row itself had already
-  // been committed, the job would otherwise be stuck embedding-less forever,
-  // since contentHash never changes again on its own.
+  // re-running AI Job Parsing + embedding + dedup entirely — but only if
+  // both actually succeeded last time:
+  // - If a prior attempt's upsertJobEmbedding write failed after the job row
+  //   itself had already been committed, the job would otherwise be stuck
+  //   embedding-less forever, since contentHash never changes again on its
+  //   own.
+  // - If AI Job Parsing hit a transient failure (e.g. LLM rate limiting),
+  //   parseJobFields doesn't throw — it returns confidence=0 with empty
+  //   fields so ingestion isn't blocked — but that
+  //   "success" then permanently freezes this job at confidence=0/no skills
+  //   the same way, since nothing about it looks like a failure to retry.
+  //   sourceStructured sources (Himalayas) never hit this: their fields come
+  //   straight from the source, not an LLM call, so confidence is always 1.0.
   if (existing && existing.contentHash === contentHash) {
     const hasEmbedding = (await getJobEmbedding(existing.id)) !== null;
-    if (hasEmbedding) {
+    const needsReparse = !normalized.sourceStructured && existing.parseConfidence === 0;
+
+    if (hasEmbedding && !needsReparse) {
       await prisma.job.update({
         where: { id: existing.id },
         data: { postedAt: normalized.postedAt, updatedAt: new Date() },
@@ -53,24 +63,58 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
       return;
     }
 
-    logger.warn({ event: 'ingestion_parse_embedding_missing_retry', traceId, jobId: existing.id });
-    const embeddingText = buildJobText({
-      title: normalized.title,
-      company: normalized.company,
-      tags: normalized.tags,
-      description: normalized.description,
-    });
-    const embedding = await generateEmbedding(embeddingText);
-    await upsertJobEmbedding(
-      existing.id,
-      embedding,
-      process.env.EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODEL,
-    );
+    if (needsReparse) {
+      logger.warn({ event: 'ingestion_parse_reparse_retry', traceId, jobId: existing.id });
+    }
+    if (!hasEmbedding) {
+      logger.warn({
+        event: 'ingestion_parse_embedding_missing_retry',
+        traceId,
+        jobId: existing.id,
+      });
+    }
+
+    const parsed = needsReparse
+      ? await parseJobFields({
+          title: normalized.title,
+          description: normalized.description,
+          tags: normalized.tags,
+        })
+      : null;
+
+    if (!hasEmbedding) {
+      const embeddingText = buildJobText({
+        title: normalized.title,
+        company: normalized.company,
+        tags: normalized.tags,
+        description: normalized.description,
+      });
+      const embedding = await generateEmbedding(embeddingText);
+      await upsertJobEmbedding(
+        existing.id,
+        embedding,
+        process.env.EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODEL,
+      );
+    }
+
     await prisma.job.update({
       where: { id: existing.id },
-      data: { postedAt: normalized.postedAt, updatedAt: new Date() },
+      data: {
+        ...(parsed && {
+          role: parsed.role || null,
+          level: parsed.level,
+          skills: parsed.skills,
+          salaryMin: parsed.salaryMin ?? normalized.salaryMin ?? null,
+          salaryMax: parsed.salaryMax ?? normalized.salaryMax ?? null,
+          eligibleRegions: parsed.eligibleRegions,
+          parseConfidence: parsed.confidence,
+        }),
+        postedAt: normalized.postedAt,
+        updatedAt: new Date(),
+      },
     });
-    logger.info({ event: 'ingestion_parse_embedding_backfilled', traceId, jobId: existing.id });
+
+    logger.info({ event: 'ingestion_parse_retry_complete', traceId, jobId: existing.id });
     await enqueueScoringForJob(existing.id);
     return;
   }

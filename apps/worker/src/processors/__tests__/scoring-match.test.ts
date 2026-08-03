@@ -29,6 +29,10 @@ const { mockCanScore, mockIncrementUsage } = vi.hoisted(() => ({
   mockIncrementUsage: vi.fn(),
 }));
 
+const { mockAgentHandoffQueueAdd } = vi.hoisted(() => ({
+  mockAgentHandoffQueueAdd: vi.fn(),
+}));
+
 vi.mock('@ai-job-market-intelligence/db', () => ({
   prisma: {
     userProfile: { findUniqueOrThrow: mockFindProfile },
@@ -49,6 +53,11 @@ vi.mock('@ai-job-market-intelligence/ai', () => ({
 vi.mock('../../billing/usage.js', () => ({
   canScore: mockCanScore,
   incrementUsage: mockIncrementUsage,
+}));
+
+vi.mock('@ai-job-market-intelligence/shared/queue', () => ({
+  getAgentHandoffQueue: () => ({ add: mockAgentHandoffQueueAdd }),
+  AGENT_HANDOFF_JOB_OPTS: {},
 }));
 
 vi.mock('../../logger.js', () => ({
@@ -85,6 +94,7 @@ beforeEach(() => {
   mockScoreJob.mockReset();
   mockCanScore.mockReset();
   mockIncrementUsage.mockReset();
+  mockAgentHandoffQueueAdd.mockReset();
 
   mockCanScore.mockResolvedValue(true);
   mockFindProfile.mockResolvedValue({
@@ -157,5 +167,25 @@ describe('processScoringMatch', () => {
     await expect(
       processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' })),
     ).resolves.toBeUndefined();
+  });
+
+  it('enqueues an agent_handoff when the score is >= 90', async () => {
+    mockScoreJob.mockResolvedValue({ ...scoringResult, score: 94 });
+
+    await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+    expect(mockAgentHandoffQueueAdd).toHaveBeenCalledWith(
+      'handoff',
+      { jobId: 'job-1', userId: 'user-1', matchScore: 94 },
+      expect.objectContaining({ jobId: 'handoff:job-1:user-1' }),
+    );
+  });
+
+  it('does not enqueue an agent_handoff below the 90 threshold', async () => {
+    mockScoreJob.mockResolvedValue({ ...scoringResult, score: 89 });
+
+    await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+    expect(mockAgentHandoffQueueAdd).not.toHaveBeenCalled();
   });
 });

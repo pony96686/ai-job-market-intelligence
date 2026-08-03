@@ -1,9 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, Briefcase, Bot, TrendingUp, Settings, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
+import { fetchAgentHandoffs } from '@/lib/api/career-agent';
+import { getAgentHandoffLastViewedAt, onAgentHandoffsViewed } from '@/lib/agent-handoff-viewed';
 
 // Personal items (in-app, use your own data) vs. the public market-data
 // group below — kept apart by a plain divider rather than a text heading,
@@ -25,12 +29,14 @@ function NavLink({
   icon: Icon,
   active,
   onNavigate,
+  showUnreadDot,
 }: {
   href: string;
   labelKey: string;
   icon: typeof LayoutDashboard;
   active: boolean;
   onNavigate?: () => void;
+  showUnreadDot?: boolean;
 }) {
   const t = useTranslations('nav');
 
@@ -45,14 +51,41 @@ function NavLink({
           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
       )}
     >
-      <Icon className="h-4 w-4" />
+      <span className="relative">
+        <Icon className="h-4 w-4" />
+        {showUnreadDot && (
+          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-destructive" />
+        )}
+      </span>
       {t(labelKey)}
     </Link>
   );
 }
 
+// Career Coach nav item shows a small dot when a real-time agent handoff
+// (score >= 90) fired since the user last opened /career-coach — cleared by
+// markAgentHandoffsViewed() on that page's mount, see agent-handoff-viewed.ts.
+function useHasUnreadAgentHandoff(): boolean {
+  const { data: handoffs } = useQuery({
+    queryKey: ['agent-handoffs', 'latest'],
+    queryFn: () => fetchAgentHandoffs(1),
+    refetchInterval: 60_000,
+  });
+  const [lastViewedAt, setLastViewedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLastViewedAt(getAgentHandoffLastViewedAt());
+    return onAgentHandoffsViewed(() => setLastViewedAt(getAgentHandoffLastViewedAt()));
+  }, []);
+
+  const latest = handoffs?.[0];
+  if (!latest) return false;
+  return !lastViewedAt || latest.triggeredAt > lastViewedAt;
+}
+
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const hasUnreadHandoff = useHasUnreadAgentHandoff();
 
   return (
     <nav className="flex flex-col gap-1">
@@ -64,6 +97,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
           icon={icon}
           active={pathname.startsWith(href)}
           onNavigate={onNavigate}
+          showUnreadDot={href === '/career-coach' && hasUnreadHandoff}
         />
       ))}
       <hr className="my-2 border-border" />
