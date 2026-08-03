@@ -1,6 +1,7 @@
 import type {
   CareerBriefResponse,
   CareerCoachMessageDto,
+  AgentHandoffDto,
   ErrorCode,
 } from '@ai-job-market-intelligence/shared';
 
@@ -21,6 +22,13 @@ export async function fetchLatestCareerBrief(): Promise<CareerBriefResponse | nu
   const res = await fetch('/api/v1/career-agent/briefs/latest');
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Failed to load career brief');
+  const body = await res.json();
+  return body.data;
+}
+
+export async function fetchAgentHandoffs(limit = 10): Promise<AgentHandoffDto[]> {
+  const res = await fetch(`/api/v1/agent-handoffs?limit=${limit}`);
+  if (!res.ok) throw new Error('Failed to load agent handoffs');
   const body = await res.json();
   return body.data;
 }

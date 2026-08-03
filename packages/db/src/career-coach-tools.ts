@@ -1,4 +1,4 @@
-import { prisma } from '@ai-job-market-intelligence/db';
+import { prisma } from './client';
 import {
   getCareerPathRecommendations,
   getSalaryRange,
@@ -87,7 +87,10 @@ async function getSalaryRangeTool(args: Record<string, unknown>): Promise<unknow
 
 // Tool execution needs Prisma, which packages/ai deliberately doesn't
 // depend on — this is the DB-backed implementation of the tool contract
-// runCareerCoachTurn calls into, scoped to the requesting user.
+// runCareerCoachTurn calls into, scoped to the requesting user. Lives in
+// packages/db (rather than duplicated per-app) since both apps/web (the
+// user-facing Career Coach chat) and apps/worker (the agent_handoff opener)
+// need the exact same tool behavior.
 export function createCareerCoachToolExecutor(userId: string): CareerCoachToolExecutor {
   return async ({ name, arguments: args }) => {
     switch (name) {

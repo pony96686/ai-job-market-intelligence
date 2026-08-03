@@ -195,7 +195,12 @@
     "clearConfirmTitle": "Clear this conversation?",
     "clearConfirmDescription": "This permanently deletes your entire Career Coach conversation history. This cannot be undone.",
     "clearCancel": "Cancel",
-    "clearConfirm": "Clear conversation"
+    "clearConfirm": "Clear conversation",
+    "handoffTimelineTitle": "Opportunity Discovery found something",
+    "handoffFound": "{title} @ {company} — {score}% match",
+    "handoffReason": "Triggered because {reason}",
+    "handoffStatusDone": "Coach replied",
+    "handoffStatusPending": "Pending"
   },
   "jobs": {
     "title": "Jobs",

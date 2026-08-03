@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth';
-import { prisma } from '@ai-job-market-intelligence/db';
+import { prisma, createCareerCoachToolExecutor } from '@ai-job-market-intelligence/db';
 import {
   runCareerCoachTurn,
   CareerCoachRateLimitError,
@@ -10,14 +10,8 @@ import {
   CareerCoachMessageSchema,
   CareerCoachClearResponseSchema,
 } from '@ai-job-market-intelligence/shared';
-import { createCareerCoachToolExecutor } from '@/lib/career-coach-tools';
+import { CAREER_COACH_HISTORY_CONTEXT_LIMIT } from '@ai-job-market-intelligence/shared/constants';
 import { apiSuccess, apiError } from '@/lib/api-response';
-
-// Context window cap (bounded context per call, not the
-// full history) — keeps cost bounded as a conversation grows, at the
-// expense of long-range memory the coach doesn't need for market-data Q&A
-// anyway.
-const HISTORY_CONTEXT_LIMIT = 20;
 
 // Streamed word-by-word rather than token-by-token — see coach-agent.ts:
 // runCareerCoachTurn resolves the full answer (including any tool-calling
@@ -84,7 +78,7 @@ export async function POST(request: Request) {
   const recentMessages = await prisma.careerCoachMessage.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
-    take: HISTORY_CONTEXT_LIMIT,
+    take: CAREER_COACH_HISTORY_CONTEXT_LIMIT,
   });
   const history: CareerCoachMessage[] = recentMessages
     .reverse()

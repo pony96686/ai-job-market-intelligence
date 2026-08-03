@@ -30,6 +30,47 @@ export function hasExcludedTag(tags: string[]): boolean {
   return tags.some((tag) => EXCLUDED_TAGS.has(tag.toLowerCase()));
 }
 
+// Independent of EXCLUDED_TAGS — Greenhouse/Lever/Ashby never provide native
+// tags (normalize() always leaves that array empty for them), so tag-only
+// filtering is a no-op for those three sources. Checked as word-boundary
+// matches, not substring, so "designer" doesn't false-positive on
+// "Design Systems Engineer"/"Software Design Engineer".
+const EXCLUDED_TITLE_KEYWORDS = [
+  'sales',
+  'marketing',
+  'business development',
+  'recruiting',
+  'recruiter',
+  'customer success',
+  'hr',
+  'human resources',
+  'legal',
+  'counsel',
+  'finance',
+  'financial',
+  'healthcare',
+  'medical',
+  'designer',
+  'chief of staff',
+  'media buyer',
+  'social media',
+  'account executive',
+  'account manager',
+];
+
+function toWordBoundaryPattern(keyword: string): RegExp {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`, 'i');
+}
+
+const EXCLUDED_TITLE_PATTERNS = EXCLUDED_TITLE_KEYWORDS.map(toWordBoundaryPattern);
+
+// Shared with the one-time backfill script (apps/worker/
+// scripts/backfill-remove-nontech-titles.ts).
+export function hasExcludedTitleKeyword(title: string): boolean {
+  return EXCLUDED_TITLE_PATTERNS.some((pattern) => pattern.test(title));
+}
+
 export function passesFilter(job: NormalizedJob): boolean {
   if (job.title.length < 3) return false;
   if (job.description.length < 50) return false;
@@ -41,7 +82,7 @@ export function passesFilter(job: NormalizedJob): boolean {
 
   if (!REMOTE_FRIENDLY_SOURCES.has(job.source) && !REMOTE_LOCATION_PATTERN.test(job.location))
     return false;
-  if (hasExcludedTag(job.tags)) return false;
+  if (hasExcludedTag(job.tags) || hasExcludedTitleKeyword(job.title)) return false;
 
   return true;
 }

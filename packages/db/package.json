@@ -16,6 +16,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@ai-job-market-intelligence/ai": "workspace:*",
     "@ai-job-market-intelligence/shared": "workspace:*",
     "@prisma/client": "^6.1.0"
   },

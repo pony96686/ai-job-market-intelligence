@@ -14,6 +14,7 @@ import { processProfileParse } from './processors/profile-parse.js';
 import { processSkillTrendAggregate } from './processors/skill-trend-aggregate.js';
 import { processCareerAgentDaily } from './processors/career-agent-daily.js';
 import { processCareerBriefGenerate } from './processors/career-brief-generate.js';
+import { processAgentHandoff } from './processors/agent-handoff.js';
 import { setupCronJobs } from './queues/setup-cron.js';
 
 const port = Number(process.env.PORT ?? 3001);
@@ -70,6 +71,7 @@ const workers = [
     connection,
     concurrency: 5,
   }),
+  new Worker(QUEUE_NAMES.AGENT_HANDOFF, processAgentHandoff, { connection, concurrency: 3 }),
 ];
 
 workers.forEach((w) => {

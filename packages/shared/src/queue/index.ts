@@ -41,3 +41,8 @@ export {
   CAREER_BRIEF_GENERATE_JOB_OPTS,
   type CareerBriefGeneratePayload,
 } from './career-brief-generate';
+export {
+  getAgentHandoffQueue,
+  AGENT_HANDOFF_JOB_OPTS,
+  type AgentHandoffPayload,
+} from './agent-handoff';

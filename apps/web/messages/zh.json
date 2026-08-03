@@ -195,7 +195,12 @@
     "clearConfirmTitle": "确定要清空这段对话吗？",
     "clearConfirmDescription": "这会永久删除你在职业教练里的全部对话历史，操作无法撤销。",
     "clearCancel": "取消",
-    "clearConfirm": "清空对话"
+    "clearConfirm": "清空对话",
+    "handoffTimelineTitle": "机会发现 Agent 发现了新机会",
+    "handoffFound": "{title} @ {company} —— 匹配度 {score}%",
+    "handoffReason": "触发原因：{reason}",
+    "handoffStatusDone": "教练已回复",
+    "handoffStatusPending": "处理中"
   },
   "jobs": {
     "title": "职位",

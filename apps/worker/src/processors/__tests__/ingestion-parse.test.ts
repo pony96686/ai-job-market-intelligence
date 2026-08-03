@@ -121,12 +121,58 @@ beforeEach(() => {
 
 describe('processIngestionParse', () => {
   it('skips re-parsing and just touches metadata when the content hash is unchanged', async () => {
-    mockFindUnique.mockResolvedValue({ id: 'job-1', contentHash: 'new-hash' });
+    mockFindUnique.mockResolvedValue({
+      id: 'job-1',
+      contentHash: 'new-hash',
+      parseConfidence: 0.9,
+    });
 
     await processIngestionParse(makeJob({ normalized, companyId: 'company-1' }));
 
     expect(mockParseJobFields).not.toHaveBeenCalled();
     expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { postedAt: normalized.postedAt, updatedAt: expect.any(Date) },
+    });
+  });
+
+  it('re-parses (without touching an already-present embedding) when content hash is unchanged but a prior attempt froze at confidence=0', async () => {
+    mockFindUnique.mockResolvedValue({ id: 'job-1', contentHash: 'new-hash', parseConfidence: 0 });
+
+    await processIngestionParse(makeJob({ normalized, companyId: 'company-1' }));
+
+    expect(mockParseJobFields).toHaveBeenCalledWith({
+      title: normalized.title,
+      description: normalized.description,
+      tags: normalized.tags,
+    });
+    expect(mockGenerateEmbedding).not.toHaveBeenCalled();
+    expect(mockUpsertJobEmbedding).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: expect.objectContaining({
+        role: 'Backend Engineer',
+        level: 'Senior',
+        skills: ['node'],
+        parseConfidence: 0.9,
+        postedAt: normalized.postedAt,
+        updatedAt: expect.any(Date),
+      }),
+    });
+    expect(mockQueueAdd).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not attempt a reparse retry for a sourceStructured job even if parseConfidence were ever 0', async () => {
+    const structuredNormalized = { ...normalized, source: 'HIMALAYAS', sourceStructured: true };
+    mockFindUnique.mockResolvedValue({ id: 'job-1', contentHash: 'new-hash', parseConfidence: 0 });
+
+    await processIngestionParse(
+      makeJob({ normalized: structuredNormalized, companyId: 'company-1' }),
+    );
+
+    expect(mockParseJobFields).not.toHaveBeenCalled();
     expect(mockUpdate).toHaveBeenCalledWith({
       where: { id: 'job-1' },
       data: { postedAt: normalized.postedAt, updatedAt: expect.any(Date) },

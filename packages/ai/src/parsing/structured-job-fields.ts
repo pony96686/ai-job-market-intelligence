@@ -1,4 +1,5 @@
 import type { NormalizedJob, ParsedJobFields } from '@ai-job-market-intelligence/shared/ingestion';
+import { normalizeSkill } from '@ai-job-market-intelligence/shared/skills';
 
 // Sources that set sourceStructured=true (currently only Himalayas) already
 // provide salary/seniority/employmentType natively — this builds
@@ -32,11 +33,20 @@ export function normalizeRole(title: string, _seniority: string | undefined): st
   return title.trim();
 }
 
+// Himalayas' own `tags` come from its `categories` field — a job-role/
+// category taxonomy ("ai-engineering", "cloud-engineer"), not a technical
+// skill list, and includes plenty of entries that are pure noise even after
+// splitting ("software-engineer-ii"). Running each tag through the same
+// manually maintained skill whitelist normalizeSkill() applies to every
+// other source keeps this field genuinely "normalized skill names" as
+// documented on Job.skills, instead of a raw, unfiltered pass-through of
+// whatever the source happened to call a "tag".
 export function extractTagsAsSkills(tags: string[]): string[] {
   const seen = new Set<string>();
   for (const tag of tags) {
-    const normalized = tag.toLowerCase().trim();
-    if (normalized) seen.add(normalized);
+    for (const { slug } of normalizeSkill(tag)) {
+      seen.add(slug);
+    }
   }
   return [...seen];
 }

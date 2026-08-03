@@ -19,15 +19,12 @@ vi.mock('@ai-job-market-intelligence/db', () => ({
   prisma: {
     careerCoachMessage: { findMany: mockFindMany, create: mockCreate, deleteMany: mockDeleteMany },
   },
+  createCareerCoachToolExecutor: mockCreateToolExecutor,
 }));
 
 vi.mock('@ai-job-market-intelligence/ai', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@ai-job-market-intelligence/ai')>()),
   runCareerCoachTurn: mockRunCareerCoachTurn,
-}));
-
-vi.mock('@/lib/career-coach-tools', () => ({
-  createCareerCoachToolExecutor: mockCreateToolExecutor,
 }));
 
 import { GET, POST, DELETE } from '../route';

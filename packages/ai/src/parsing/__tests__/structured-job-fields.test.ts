@@ -36,11 +36,34 @@ describe('mapSeniority', () => {
 });
 
 describe('extractTagsAsSkills', () => {
-  it('lowercases, trims and deduplicates tags', () => {
+  it('normalizes recognized tags to canonical slugs and deduplicates', () => {
     expect(extractTagsAsSkills(['Node.js', 'TypeScript', 'node.js', ' '])).toEqual([
       'node.js',
       'typescript',
     ]);
+  });
+
+  // Real-world Himalayas `categories` values (mapped to `tags`) — a job-role
+  // taxonomy, not a skill list. None of these should survive normalization.
+  it('drops role/category tags that are not real technical skills', () => {
+    expect(
+      extractTagsAsSkills([
+        'software-engineering',
+        'ai-engineering',
+        'cloud-engineer',
+        'backend-development',
+        'software-engineer-ii',
+        'ai-enablement-engineer',
+        'mid-level-ai-enablement-engineer',
+        'ai-ml-software-engineer',
+      ]),
+    ).toEqual([]);
+  });
+
+  it('still pulls a real skill token out of a compound category tag', () => {
+    // "fullstack" is a recognized whitelist entry even though the rest of
+    // the tag ("-development") is not.
+    expect(extractTagsAsSkills(['fullstack-development'])).toEqual(['full-stack']);
   });
 });
 

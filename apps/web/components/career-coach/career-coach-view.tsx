@@ -9,6 +9,7 @@ import {
   clearCareerCoachHistory,
   CareerCoachSendError,
 } from '@/lib/api/career-agent';
+import { markAgentHandoffsViewed } from '@/lib/agent-handoff-viewed';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,6 +22,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { AgentHandoffTimeline } from './agent-handoff-timeline';
+import { MessageContent } from './message-content';
 
 interface ChatMessage {
   role: 'USER' | 'ASSISTANT';
@@ -55,6 +58,12 @@ export function CareerCoachView() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Opening this page is what "reads" any pending agent handoffs — clears
+  // the Sidebar's unread badge.
+  useEffect(() => {
+    markAgentHandoffsViewed();
+  }, []);
 
   async function handleSend() {
     const content = input.trim();
@@ -136,6 +145,8 @@ export function CareerCoachView() {
         </Dialog>
       </div>
 
+      <AgentHandoffTimeline />
+
       <div className="flex-1 space-y-4 overflow-y-auto rounded-md border border-border p-4">
         {isLoading ? (
           <Skeleton className="h-24 w-full" />
@@ -151,7 +162,7 @@ export function CareerCoachView() {
                     : 'inline-block max-w-[80%] rounded-lg bg-muted px-3 py-2 text-sm'
                 }
               >
-                {message.content || '…'}
+                {message.content ? <MessageContent content={message.content} /> : '…'}
               </span>
             </div>
           ))
