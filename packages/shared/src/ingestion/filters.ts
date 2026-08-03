@@ -1,4 +1,3 @@
-import { containsInjectionPattern } from '../security';
 import type { NormalizedJob } from './types';
 
 const MAX_POSTED_AGE_DAYS = 90;
@@ -43,9 +42,6 @@ export function passesFilter(job: NormalizedJob): boolean {
   if (!REMOTE_FRIENDLY_SOURCES.has(job.source) && !REMOTE_LOCATION_PATTERN.test(job.location))
     return false;
   if (hasExcludedTag(job.tags)) return false;
-  // Screen out postings crafted to prompt-inject the LLM calls this
-  // description is later fed to (AI Job Parsing, Scoring).
-  if (containsInjectionPattern(job.description)) return false;
 
   return true;
 }
