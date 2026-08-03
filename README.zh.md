@@ -29,7 +29,15 @@
 
 这是一个 Monorepo 项目，全站中英双语，AI 部分默认走 [OpenRouter](https://openrouter.ai) 的免费模型，尽量把运行成本压到最低。
 
-> **状态**：持续开发中，尚未正式上线。这是一个作品集项目——Company Discovery 流水线目标是一个有界的规模（约 1,000-2,000 家公司、10,000+ 条职位），不是对全网无边界爬取。
+> **状态**：持续开发中，尚未正式上线。这是一个作品集项目——Company Discovery 流水线目标是一个有界的规模（约 1,000-2,000 家公司、10,000+ 条职位），不是对全网无边界爬取。支付走的是 **Stripe 测试环境（Test Mode）**——在线演示里的"升级到 Pro"流程不会产生真实扣款，只接受 Stripe 的测试卡号，例如：
+>
+> | 场景         | 卡号                  | 有效期 / CVC / 邮编                          |
+> | ------------ | --------------------- | -------------------------------------------- |
+> | 支付成功     | `4242 4242 4242 4242` | 任意未来日期 / 任意 3 位数字 / 任意 5 位数字 |
+> | 支付被拒绝   | `4000 0000 0000 0002` | 同上                                         |
+> | 需要 3D 验证 | `4000 0025 0000 3155` | 同上                                         |
+>
+> 完整列表见 [Stripe 官方测试文档](https://docs.stripe.com/testing)。
 
 ## 核心功能
 
@@ -42,7 +50,7 @@
 - **技能缺口分析** —— 对比你的技能和目标岗位所需技能
 - **基于内容指纹的增量抓取** —— 内容未变化的职位跳过重新解析和重新生成 Embedding，控制 LLM 调用成本
 - **职位下架检测** —— 公司招聘板上已撤下的职位会被标记为关闭，而不是永远挂在列表里
-- **Free / Pro 订阅套餐**（Stripe）
+- **Free / Pro 订阅套餐**（Stripe，在线演示为测试模式）
 - **中英双语界面**（next-intl，英文默认）
 
 ## 技术栈
@@ -55,7 +63,7 @@
 | 数据库      | PostgreSQL 16 + `pgvector`（职位/画像向量）                                                                                                            |
 | AI          | [OpenRouter](https://openrouter.ai) —— LLM（`google/gemma-4-26b-a4b-it:free`）+ Embedding（`nvidia/llama-nemotron-embed-vl-1b-v2:free`），成本优先设计 |
 | 认证        | Auth.js v5（Resend Email Magic Link）                                                                                                                  |
-| 支付        | Stripe（Free / Pro）                                                                                                                                   |
+| 支付        | Stripe（Free / Pro，在线演示为测试模式）                                                                                                               |
 | 多语言      | next-intl（`en` 默认 / `zh`）                                                                                                                          |
 | 测试        | Vitest（单元）+ Playwright（E2E）                                                                                                                      |
 | CI          | GitHub Actions                                                                                                                                         |

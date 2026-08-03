@@ -40,7 +40,17 @@ AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
 
 > **Status**: actively developed, pre-launch. This is a portfolio project — the
 > Company Discovery pipeline runs against a bounded target (~1,000–2,000 companies,
-> ~10,000+ jobs), not an unbounded crawl of the entire web.
+> ~10,000+ jobs), not an unbounded crawl of the entire web. Billing runs against
+> **Stripe test mode** — the "Upgrade to Pro" flow on the live demo does not charge
+> real money and only accepts Stripe's test card numbers, e.g.:
+>
+> | Scenario                          | Card number           | Expiry / CVC / ZIP                            |
+> | --------------------------------- | --------------------- | --------------------------------------------- |
+> | Payment succeeds                  | `4242 4242 4242 4242` | any future date / any 3 digits / any 5 digits |
+> | Payment is declined               | `4000 0000 0000 0002` | same as above                                 |
+> | Requires 3D Secure authentication | `4000 0025 0000 3155` | same as above                                 |
+>
+> Full list: [Stripe's testing docs](https://docs.stripe.com/testing).
 
 ## Key Features
 
@@ -62,7 +72,7 @@ AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
   re-embedding to control LLM cost
 - **Job closure detection** — postings removed from a company's board are marked
   closed rather than lingering forever
-- **Free / Pro subscription tiers** via Stripe
+- **Free / Pro subscription tiers** via Stripe (test mode on the live demo)
 - **Bilingual UI** (English default / Chinese) via next-intl
 
 ## Tech Stack
@@ -75,7 +85,7 @@ AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
 | Database        | PostgreSQL 16 + `pgvector` (job & profile embeddings)                                                                                                         |
 | AI              | [OpenRouter](https://openrouter.ai) — LLM (`google/gemma-4-26b-a4b-it:free`) + embeddings (`nvidia/llama-nemotron-embed-vl-1b-v2:free`), cost-first by design |
 | Auth            | Auth.js v5 (Email Magic Link via Resend)                                                                                                                      |
-| Payments        | Stripe (Free / Pro)                                                                                                                                           |
+| Payments        | Stripe (Free / Pro, test mode on the live demo)                                                                                                               |
 | i18n            | next-intl (`en` default / `zh`)                                                                                                                               |
 | Testing         | Vitest (unit) + Playwright (E2E)                                                                                                                              |
 | CI              | GitHub Actions                                                                                                                                                |
