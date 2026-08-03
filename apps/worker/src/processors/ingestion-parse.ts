@@ -2,6 +2,7 @@ import type { Job } from 'bullmq';
 import {
   prisma,
   upsertJobEmbedding,
+  getJobEmbedding,
   findSimilarJobs,
   recordAlsoSeenOn,
 } from '@ai-job-market-intelligence/db';
@@ -36,13 +37,41 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
   const contentHash = computeContentHash(normalized);
 
   // Same content as last crawl → only metadata needs a touch, skip
-  // re-running AI Job Parsing + embedding + dedup entirely.
+  // re-running AI Job Parsing + embedding + dedup entirely — but only if the
+  // embedding actually made it to the DB. If a prior attempt's
+  // upsertJobEmbedding write failed after the job row itself had already
+  // been committed, the job would otherwise be stuck embedding-less forever,
+  // since contentHash never changes again on its own.
   if (existing && existing.contentHash === contentHash) {
+    const hasEmbedding = (await getJobEmbedding(existing.id)) !== null;
+    if (hasEmbedding) {
+      await prisma.job.update({
+        where: { id: existing.id },
+        data: { postedAt: normalized.postedAt, updatedAt: new Date() },
+      });
+      logger.info({ event: 'ingestion_parse_skip_unchanged', traceId, jobId: existing.id });
+      return;
+    }
+
+    logger.warn({ event: 'ingestion_parse_embedding_missing_retry', traceId, jobId: existing.id });
+    const embeddingText = buildJobText({
+      title: normalized.title,
+      company: normalized.company,
+      tags: normalized.tags,
+      description: normalized.description,
+    });
+    const embedding = await generateEmbedding(embeddingText);
+    await upsertJobEmbedding(
+      existing.id,
+      embedding,
+      process.env.EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODEL,
+    );
     await prisma.job.update({
       where: { id: existing.id },
       data: { postedAt: normalized.postedAt, updatedAt: new Date() },
     });
-    logger.info({ event: 'ingestion_parse_skip_unchanged', traceId, jobId: existing.id });
+    logger.info({ event: 'ingestion_parse_embedding_backfilled', traceId, jobId: existing.id });
+    await enqueueScoringForJob(existing.id);
     return;
   }
 

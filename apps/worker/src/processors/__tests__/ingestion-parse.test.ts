@@ -6,6 +6,7 @@ const {
   mockUpdate,
   mockFindManyUsers,
   mockUpsertJobEmbedding,
+  mockGetJobEmbedding,
   mockFindSimilarJobs,
   mockRecordAlsoSeenOn,
 } = vi.hoisted(() => ({
@@ -14,6 +15,7 @@ const {
   mockUpdate: vi.fn(),
   mockFindManyUsers: vi.fn(),
   mockUpsertJobEmbedding: vi.fn(),
+  mockGetJobEmbedding: vi.fn(),
   mockFindSimilarJobs: vi.fn(),
   mockRecordAlsoSeenOn: vi.fn(),
 }));
@@ -39,6 +41,7 @@ vi.mock('@ai-job-market-intelligence/db', () => ({
     user: { findMany: mockFindManyUsers },
   },
   upsertJobEmbedding: mockUpsertJobEmbedding,
+  getJobEmbedding: mockGetJobEmbedding,
   findSimilarJobs: mockFindSimilarJobs,
   recordAlsoSeenOn: mockRecordAlsoSeenOn,
 }));
@@ -60,7 +63,7 @@ vi.mock('@ai-job-market-intelligence/shared/queue', () => ({
 }));
 
 vi.mock('../../logger.js', () => ({
-  logger: { info: vi.fn(), error: vi.fn() },
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
 import { processIngestionParse } from '../ingestion-parse';
@@ -97,6 +100,7 @@ beforeEach(() => {
   mockUpdate.mockReset();
   mockFindManyUsers.mockReset();
   mockUpsertJobEmbedding.mockReset();
+  mockGetJobEmbedding.mockReset();
   mockFindSimilarJobs.mockReset();
   mockRecordAlsoSeenOn.mockReset();
   mockParseJobFields.mockReset();
@@ -106,6 +110,7 @@ beforeEach(() => {
   mockQueueAdd.mockReset();
 
   mockFindUnique.mockResolvedValue(null);
+  mockGetJobEmbedding.mockResolvedValue([0.1, 0.2]);
   mockComputeContentHash.mockReturnValue('new-hash');
   mockParseJobFields.mockResolvedValue(parsedFields);
   mockGenerateEmbedding.mockResolvedValue([0.1, 0.2]);
@@ -126,6 +131,32 @@ describe('processIngestionParse', () => {
       where: { id: 'job-1' },
       data: { postedAt: normalized.postedAt, updatedAt: expect.any(Date) },
     });
+  });
+
+  it('regenerates the embedding (without re-parsing) when the content hash is unchanged but the embedding is missing', async () => {
+    mockFindUnique.mockResolvedValue({ id: 'job-1', contentHash: 'new-hash' });
+    mockGetJobEmbedding.mockResolvedValue(null);
+
+    await processIngestionParse(makeJob({ normalized, companyId: 'company-1' }));
+
+    expect(mockParseJobFields).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockGenerateEmbedding).toHaveBeenCalledWith('embedding-text');
+    expect(mockUpsertJobEmbedding).toHaveBeenCalledWith(
+      'job-1',
+      [0.1, 0.2],
+      'text-embedding-3-small',
+    );
+    expect(mockUpdate).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { postedAt: normalized.postedAt, updatedAt: expect.any(Date) },
+    });
+    expect(mockQueueAdd).toHaveBeenCalledTimes(2);
+    expect(mockQueueAdd).toHaveBeenCalledWith(
+      'score',
+      { jobId: 'job-1', userId: 'user-1' },
+      expect.objectContaining({ jobId: 'score:job-1:user-1' }),
+    );
   });
 
   it('re-parses when the content hash differs from the stored one', async () => {
