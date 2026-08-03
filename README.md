@@ -38,11 +38,9 @@ You paste your resume or link your GitHub, and the platform:
 It's a monorepo, fully bilingual (English/Chinese), and built to be cheap to run — the
 AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
 
-> **Status**: actively developed, pre-launch. This is a portfolio project — the
-> Company Discovery pipeline runs against a bounded target (~1,000–2,000 companies,
-> ~10,000+ jobs), not an unbounded crawl of the entire web. Billing runs against
-> **Stripe test mode** — the "Upgrade to Pro" flow on the live demo does not charge
-> real money and only accepts Stripe's test card numbers, e.g.:
+> **Note**: Billing on the live demo runs against **Stripe test mode** — the
+> "Upgrade to Pro" flow does not charge real money and only accepts Stripe's test
+> card numbers, e.g.:
 >
 > | Scenario                          | Card number           | Expiry / CVC / ZIP                            |
 > | --------------------------------- | --------------------- | --------------------------------------------- |
