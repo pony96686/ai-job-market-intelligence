@@ -32,8 +32,8 @@ export async function fetchCareerCoachHistory(): Promise<CareerCoachMessageDto[]
   return body.data;
 }
 
-// Hard delete, irreversible — no conversationId/multi-thread concept
-// (v2-scope.md §2 decision #6), so this clears the user's entire history.
+// Hard delete, irreversible — no conversationId/multi-thread concept,
+// so this clears the user's entire history.
 export async function clearCareerCoachHistory(): Promise<void> {
   const res = await fetch('/api/v1/career-coach/messages', { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to clear conversation history');

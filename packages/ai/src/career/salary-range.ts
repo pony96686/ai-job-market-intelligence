@@ -13,9 +13,9 @@ const MIN_SAMPLE_SIZE = 10;
 // Pure aggregation over pre-fetched, already-annualized salary figures (see
 // normalizeToAnnualUSD in scoring/rule-score.ts — same "no currency
 // conversion" assumption, caller is responsible for filtering to the
-// requested role/region before calling this). mvp-scope.md/v2-scope.md §8
-// Epic 11.2: below MIN_SAMPLE_SIZE, return "insufficient data" rather than a
-// falsely precise number off a tiny sample.
+// requested role/region before calling this). Below MIN_SAMPLE_SIZE, return
+// "insufficient data" rather than a falsely precise number off a tiny
+// sample.
 export function getSalaryRange(
   role: string,
   region: string,

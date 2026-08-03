@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// CareerBrief.summary JSON shape (database-schema.md §11.2), structured
-// data only — no LLM call (v2-scope.md §8 Epic 12.2). Written by
+// CareerBrief.summary JSON shape, structured
+// data only — no LLM call. Written by
 // apps/worker's career_brief_generate processor, read by
 // GET /api/v1/career-agent/briefs/latest and the career-brief email
 // template.
@@ -62,7 +62,7 @@ export const CareerCoachSendMessageSchema = z.object({
 });
 export type CareerCoachSendMessage = z.infer<typeof CareerCoachSendMessageSchema>;
 
-// DELETE /api/v1/career-coach/messages (v2-scope.md §2 decision #6)
+// DELETE /api/v1/career-coach/messages
 export const CareerCoachClearResponseSchema = z.object({
   cleared: z.literal(true),
 });

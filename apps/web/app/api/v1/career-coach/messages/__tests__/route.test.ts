@@ -158,7 +158,7 @@ describe('POST /api/v1/career-coach/messages', () => {
   });
 });
 
-// v2-scope.md §2 decision #6: clear history is a hard delete of
+// Clear history is a hard delete of
 // career_coach_messages only, no conversationId/multi-thread concept.
 describe('DELETE /api/v1/career-coach/messages', () => {
   it('returns 401 when not authenticated', async () => {

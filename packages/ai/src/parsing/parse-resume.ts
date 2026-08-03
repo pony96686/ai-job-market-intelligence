@@ -54,7 +54,7 @@ async function callLLM(model: string, resumeText: string): Promise<ResumeParseRe
 }
 
 // Returns null when the free model (and, if configured and within budget,
-// the paid fallback per ai-scoring.md §8.5) both fail — the caller persists
+// the paid fallback) both fail — the caller persists
 // what it has and leaves resume fields empty rather than blocking the rest
 // of the profile_parse job.
 export async function parseResumeFields(resumeText: string): Promise<ResumeParseResult | null> {

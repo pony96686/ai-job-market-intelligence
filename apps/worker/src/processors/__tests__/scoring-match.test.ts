@@ -149,7 +149,7 @@ describe('processScoringMatch', () => {
     expect(mockIncrementUsage).not.toHaveBeenCalled();
   });
 
-  // v2-scope.md §2 decision #2/§8 Epic 12.3: the instant high-match email
+  // The instant high-match email
   // (score >= 80 + APPLY) is retired — scoring_match no longer imports or
   // touches notify_email at all. A high-scoring APPLY result surfaces later
   // via Opportunity Discovery in the next day's Career Brief instead.

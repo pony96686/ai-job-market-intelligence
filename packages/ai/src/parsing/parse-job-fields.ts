@@ -75,7 +75,7 @@ async function callLLM(model: string, input: ParseJobFieldsInput): Promise<Parse
 }
 
 // Never throws: JSON/schema failures (and, if a paid fallback is configured
-// and within budget per ai-scoring.md §8.5, its own failure too) fall back to
+// and within budget, its own failure too) fall back to
 // a confidence=0 result so ingestion is never blocked by a bad LLM response.
 export async function parseJobFields(input: ParseJobFieldsInput): Promise<ParsedJobFields> {
   const result = await callWithFallback(

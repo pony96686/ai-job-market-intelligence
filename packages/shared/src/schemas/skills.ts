@@ -15,8 +15,8 @@ export const WindowDaysSchema = z.coerce
 // GET /api/v1/skills/ranking
 export const SkillRankingQuerySchema = z.object({
   windowDays: WindowDaysSchema.default(90),
-  // growing/declining sort against growthPercent — see mvp-scope.md §8 Epic
-  // 10.4: skills with growthPercent=null (not enough data yet) are filtered
+  // growing/declining sort against growthPercent — skills with
+  // growthPercent=null (not enough data yet) are filtered
   // out of those two sorts, not shown with a misleading value.
   sort: z.enum(['count', 'growing', 'declining']).default('count'),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -32,8 +32,7 @@ export const SkillRankingItemSchema = z.object({
 export type SkillRankingItem = z.infer<typeof SkillRankingItemSchema>;
 
 // GET /api/v1/skills/trend — full history for one skill, so the frontend can
-// chart it over time (skill_trend_snapshots keeps all history indefinitely,
-// see database-schema.md §11.4).
+// chart it over time (skill_trend_snapshots keeps all history indefinitely).
 export const SkillTrendQuerySchema = z.object({
   skill: z.string().min(1),
   windowDays: WindowDaysSchema.default(90),

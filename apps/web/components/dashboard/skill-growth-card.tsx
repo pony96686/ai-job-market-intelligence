@@ -12,7 +12,7 @@ const WINDOW_DAYS = 90;
 
 // V1's onboarding lets users type free-text skills ("Node.js", "js", ...) —
 // normalizeSkill maps those to the same canonical slugs Skill Intelligence
-// tracks, see mvp-scope.md §8 Epic 10.6/roadmap.md §1.1.
+// tracks.
 export function SkillGrowthCard({ skills }: { skills: string[] }) {
   const t = useTranslations('dashboard');
 

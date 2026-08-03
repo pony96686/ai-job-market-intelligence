@@ -4,7 +4,7 @@ import {
 } from '@ai-job-market-intelligence/shared/queue';
 
 // 01:30 UTC — 30 minutes after skill_trend_aggregate (01:00 UTC), which this
-// job's data depends on, see v2-scope.md §2 decision #5.
+// job's data depends on.
 const DAILY_130AM_UTC = '30 1 * * *';
 
 export async function scheduleCareerAgentDailyCron(): Promise<void> {

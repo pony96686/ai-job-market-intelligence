@@ -41,7 +41,7 @@ export interface ParsedJobFields {
   salaryMax: number | null;
   remote: boolean;
   // Region restriction extracted from the posting text — empty = no explicit
-  // restriction found (globally open), see job-ingestion.md §5.1.
+  // restriction found (globally open).
   eligibleRegions: RegionBucket[];
   confidence: number;
 }

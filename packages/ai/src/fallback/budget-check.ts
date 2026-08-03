@@ -13,7 +13,7 @@ interface CachedBudget {
 let cache: CachedBudget | undefined;
 
 // Uses OpenRouter's own account ledger (GET /key) instead of tracking spend
-// ourselves (ai-scoring.md §8.5) — cached for BUDGET_CACHE_TTL_MS since this
+// ourselves — cached for BUDGET_CACHE_TTL_MS since this
 // is checked before every fallback-eligible call.
 export async function hasFallbackBudget(): Promise<boolean> {
   if (cache && cache.expiresAt > Date.now()) return cache.value;

@@ -3,7 +3,7 @@ import { getOpenRouterClient } from '../openrouter-client';
 import { callWithFallback } from '../fallback';
 
 // Same free-tier model as V1 scoring/parsing, but independently configurable
-// (v2-scope.md §2 decision #4) — if the free model turns out to be
+// — if the free model turns out to be
 // unreliable at tool-calling under load, this can be upgraded without
 // touching scoring/parsing.
 const DEFAULT_CAREER_COACH_MODEL = 'openai/gpt-oss-20b:free';
@@ -58,8 +58,7 @@ export const CAREER_COACH_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
 ];
 
 // Never invent numbers — Career Coach only states what a tool call
-// returned, and says so honestly when a tool reports insufficient data
-// (v2-scope.md §8 Epic 12.4).
+// returned, and says so honestly when a tool reports insufficient data.
 const CAREER_COACH_SYSTEM_PROMPT = `You are an AI career coach for a remote software engineering job board.
 You help users understand the job market, plan career paths, and set salary expectations.
 

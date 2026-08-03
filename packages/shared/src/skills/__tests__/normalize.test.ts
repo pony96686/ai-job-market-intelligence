@@ -27,7 +27,7 @@ describe('normalizeSkill', () => {
     expect(normalizeSkill('csharp')[0]?.name).toBe('C#');
   });
 
-  // SKILL_SYNONYMS doubles as a whitelist (v2-scope.md §8 Epic 10.1) — a
+  // SKILL_SYNONYMS doubles as a whitelist — a
   // raw tag with no synonym entry (whole-tag or as a split token) is
   // discarded, not passed through, since extractTagsAsSkills copies source
   // tags verbatim and many of those are job titles or industry categories,
@@ -44,8 +44,8 @@ describe('normalizeSkill', () => {
 
   // extractTagsAsSkills copies raw source tags verbatim, and those are
   // frequently compound job-title phrases that bury a real skill token next
-  // to noise words that just aren't in the whitelist (v2-scope.md §8 Epic
-  // 10.1's tokenization fallback).
+  // to noise words that just aren't in the whitelist (see the tokenization
+  // fallback above).
   it('falls back to per-token matching when the whole tag misses', () => {
     expect(slugs('senior-azure-devops-engineer')).toEqual(['azure', 'devops']);
     expect(slugs('cloud-devops-engineer')).toEqual(['devops']);

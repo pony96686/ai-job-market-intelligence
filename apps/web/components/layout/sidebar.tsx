@@ -7,9 +7,8 @@ import { Link, usePathname } from '@/i18n/navigation';
 
 // Personal items (in-app, use your own data) vs. the public market-data
 // group below — kept apart by a plain divider rather than a text heading,
-// since Skill Market is the only entry in that second group right now (see
-// frontend-spec.md §3.2). Upgrade to a labeled section once 2-3 public pages
-// exist.
+// since Skill Market is the only entry in that second group right now.
+// Upgrade to a labeled section once 2-3 public pages exist.
 const NAV_ITEMS = [
   { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
   { href: '/jobs', labelKey: 'jobs', icon: Briefcase },

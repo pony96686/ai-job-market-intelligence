@@ -21,7 +21,7 @@ export function CountrySelect({ value, onChange, maxCountries = 20 }: CountrySel
   const selected = options.filter((c) => value.includes(c.code));
   const atLimit = value.length >= maxCountries;
 
-  // Standard combobox behavior (frontend-spec.md's CountrySelect): focusing
+  // Standard combobox behavior: focusing
   // with no query expands the full list for browsing; typing filters it in
   // real time. The list stays collapsed until focused only so the ~249
   // countries don't take up permanent space on the page.

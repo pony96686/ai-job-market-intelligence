@@ -19,10 +19,9 @@ const GROWTH_WINDOW_DAYS = 30;
 const MIN_SAMPLE_SIZE = 5;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// Pure statistics, no LLM call (mvp-scope.md/v2-scope.md §8 Epic 11.3).
+// Pure statistics, no LLM call.
 // activeJobCount is always available (today's live ACTIVE-job count per
-// company, no time window needed — absolute-count-first per roadmap.md
-// §1.1), while
+// company, no time window needed — absolute-count-first), while
 // growthPercent compares recent vs prior GROWTH_WINDOW_DAYS-day posting
 // activity and stays null until enough sample size accumulates — same
 // progressive-enhancement pattern as computeSkillTrendSnapshots, just a

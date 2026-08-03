@@ -59,7 +59,7 @@ async function callLLM(
 }
 
 // Returns null when the free model (and, if configured and within budget,
-// the paid fallback per ai-scoring.md §8.5) both fail — the caller proceeds
+// the paid fallback) both fail — the caller proceeds
 // without a summary rather than blocking the rest of profile parsing.
 async function summarizeRepos(
   username: string,

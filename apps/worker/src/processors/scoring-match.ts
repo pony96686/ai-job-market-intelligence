@@ -67,5 +67,5 @@ export async function processScoringMatch(job: Job<ScoringMatchPayload>): Promis
 
   // Instant high-match email (score >= 80 + APPLY) is retired — high-match
   // jobs now surface via Opportunity Discovery in the next day's Career
-  // Brief instead (v2-scope.md §2 decision #2, §8 Epic 12.3).
+  // Brief instead.
 }

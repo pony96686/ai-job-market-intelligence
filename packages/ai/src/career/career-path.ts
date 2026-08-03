@@ -24,7 +24,7 @@ export interface CareerPathRecommendation {
 const MAX_RECOMMENDATIONS = 2;
 const MAX_MISSING_SKILLS = 8;
 
-// Pure statistics, no LLM call (mvp-scope.md/v2-scope.md §8 Epic 11.1).
+// Pure statistics, no LLM call.
 // Ranks candidate roles by how in-demand their missing skills are — a role
 // where the user already covers everything, or one with no overlap at all,
 // scores 0 and is excluded, so "you're already there" and "unrelated field"
@@ -33,7 +33,7 @@ export function getCareerPathRecommendations(
   userSkills: string[],
   candidateRoles: CareerPathRoleJobs[],
   // slug -> latest growthPercent, e.g. from the day's skill_trend_snapshots.
-  // Optional and additive per v2-scope.md §8 Epic 11.1 — growth data layers
+  // Optional and additive — growth data layers
   // in as a weighting factor once it's available, and takes effect on its
   // own as it accumulates; omitting it just means every candidate's weight
   // falls back to plain jobCount.

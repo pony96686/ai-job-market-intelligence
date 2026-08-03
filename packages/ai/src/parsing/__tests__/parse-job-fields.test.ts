@@ -64,8 +64,8 @@ describe('parseJobFields', () => {
     expect(result.eligibleRegions).toEqual([]);
   });
 
-  // Epic 5.12: unconfigured CHAT_MODEL_FALLBACK must behave exactly like
-  // before (mvp-scope.md §9.1) — no fallback attempt, still 2 calls, still
+  // Unconfigured CHAT_MODEL_FALLBACK must behave exactly like
+  // before — no fallback attempt, still 2 calls, still
   // confidence=0.
   it('does not attempt a fallback model when CHAT_MODEL_FALLBACK is unset', async () => {
     mockCreate.mockResolvedValue({ choices: [{ message: { content: 'not json' } }] });

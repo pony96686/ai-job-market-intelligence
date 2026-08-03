@@ -86,13 +86,13 @@ function lookup(token: string): NormalizedSkill | null {
 // short skill names ("go", "r") are common English words/letters on their
 // own, so "go-getter" splitting into "go" would false-positive as the Go
 // language. Those short names can still match, just only via the whole-tag
-// exact-match tier, never via a split token (v2-scope.md §8 Epic 10.1).
+// exact-match tier, never via a split token.
 const MIN_FALLBACK_TOKEN_LENGTH = 3;
 
 // jobs.skills entries are already lowercased/trimmed by AI Job Parsing or
-// extractTagsAsSkills (job-ingestion.md §5.1). SKILL_SYNONYMS doubles as a
-// manually maintained skill whitelist, kept as exact-match only per
-// roadmap.md's "manually maintained, no runtime learning" constraint — no
+// extractTagsAsSkills. SKILL_SYNONYMS doubles as a
+// manually maintained skill whitelist, kept as exact-match only per the
+// "manually maintained, no runtime learning" constraint — no
 // fuzzy/edit-distance matching. Two tiers:
 //   1. Whole tag exact match (single-word tags, known multi-word phrases
 //      like "machine learning").
@@ -102,7 +102,7 @@ const MIN_FALLBACK_TOKEN_LENGTH = 3;
 //      that bury a real skill token ("azure", "devops") next to noise
 //      words ("senior", "engineer") that simply aren't in the whitelist and
 //      get discarded naturally. A tag that matches neither tier contributes
-//      nothing (v2-scope.md §8 Epic 10.1).
+//      nothing.
 export function normalizeSkill(raw: string): NormalizedSkill[] {
   const cleaned = raw.toLowerCase().trim();
 

@@ -1,7 +1,7 @@
 import { prisma } from '@ai-job-market-intelligence/db';
 import { hasExcludedTag } from '@ai-job-market-intelligence/shared/ingestion';
 
-// One-time backfill for mvp-scope.md §8 Epic 4.16: the F6 exclusion filter
+// One-time backfill: the F6 exclusion filter
 // was case-sensitive and missing several category tags (b2b-sales,
 // enterprise-sales, business-development, healthcare, medical, radiology),
 // so non-tech postings that should never have been ingested slipped into
@@ -32,7 +32,7 @@ async function main() {
     );
   }
 
-  // mvp-scope.md §9.1's "high quality job pool" bar.
+  // The "high quality job pool" bar.
   const remaining = await prisma.job.count({
     where: {
       status: 'ACTIVE',
@@ -43,7 +43,7 @@ async function main() {
   if (remaining < HIGH_QUALITY_POOL_THRESHOLD) {
     console.warn(
       `Below the ${HIGH_QUALITY_POOL_THRESHOLD.toLocaleString()} high-quality job pool threshold — ` +
-        'do NOT compensate by loosening the tag filter again; see job-ingestion.md §3.6 for the ' +
+        'do NOT compensate by loosening the tag filter again; use the ' +
         'dynamic company-scale-up adjustment instead.',
     );
   }
