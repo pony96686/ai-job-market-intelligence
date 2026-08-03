@@ -25,7 +25,8 @@
 2. 对每条职位跑 **LLM 结构化解析**，从自由文本描述里提取角色/资历/技能/薪资区间/远程政策等字段
 3. 用 Embedding 相似度做 **跨源去重**——同一份职位出现在多个数据源时不会重复展示
 4. 用 **混合评分模型**（LLM 推理 + Embedding 相似度 + 规则信号）给每条职位打分，输出匹配分数、结构化的"优势/不足"解释，以及技能缺口分析
-5. 出现高匹配职位时通过邮件通知
+5. 出现高匹配职位时通过邮件通知，同时在站内通过 Opportunity Discovery 和 Daily Brief 展示
+6. 交接给 AI Career Coach —— 一个支持工具调用的对话助手，可以查询职业路径、技能趋势、薪资区间；出现突出匹配（分数 ≥ 90）时会主动开启对话
 
 这是一个 Monorepo 项目，全站中英双语，AI 部分默认走 [OpenRouter](https://openrouter.ai) 的免费模型，尽量把运行成本压到最低。
 
@@ -48,6 +49,11 @@
 - **跨源去重** —— 同一份职位出现在多个招聘板时通过 Embedding 相似度合并，不会当成不同职位重复展示
 - **混合 AI 评分** —— LLM + Embedding + 规则信号，输出结构化的"优势/不足"解释，而非一个不透明的分数
 - **技能缺口分析** —— 对比你的技能和目标岗位所需技能
+- **Skill Intelligence** —— 全市场技能需求排行榜和技能共现热力图（`/market/skills`）
+- **AI Career Agent** —— 每日匹配职位摘要（Daily Brief）、实时高匹配提醒（Opportunity
+  Discovery）、支持工具调用的 Career Coach 对话助手（职业路径推荐、技能趋势、薪资区间查询）
+- **多 Agent 交接** —— 职位对你的匹配分数 ≥ 90 时，Opportunity Discovery 自动交接给
+  Career Coach，由其针对这个匹配主动开启对话
 - **基于内容指纹的增量抓取** —— 内容未变化的职位跳过重新解析和重新生成 Embedding，控制 LLM 调用成本
 - **职位下架检测** —— 公司招聘板上已撤下的职位会被标记为关闭，而不是永远挂在列表里
 - **Free / Pro 订阅套餐**（Stripe，在线演示为测试模式）
@@ -103,6 +109,8 @@ AI Job Parsing（LLM 结构化提取；原生已有结构化字段的源跳过 L
        ↓
 评分（混合 LLM + Embedding + 规则模型，针对每个活跃用户）
   → 分数够高则发送邮件通知（仅 Pro 用户）
+  → Opportunity Discovery + Daily Brief（站内展示）
+  → 分数 ≥ 90 → Agent Handoff → Career Coach 主动开启对话
 ```
 
 ### 合规立场

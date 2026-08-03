@@ -33,7 +33,11 @@ You paste your resume or link your GitHub, and the platform:
 4. Scores every job against your profile with a **hybrid model** (LLM reasoning +
    embedding similarity + rule-based signals), producing a match score, a structured
    "why this fits / what's missing" explanation, and a skill-gap breakdown.
-5. Notifies you by email when a strong match shows up.
+5. Notifies you by email when a strong match shows up, and surfaces it in-app via
+   Opportunity Discovery and your Daily Brief.
+6. Hands you off to an AI Career Coach — a tool-calling chat assistant that can look up
+   career paths, skill trends, and salary ranges, and proactively opens a conversation
+   whenever a stand-out match (score ≥ 90) appears.
 
 It's a monorepo, fully bilingual (English/Chinese), and built to be cheap to run — the
 AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
@@ -66,6 +70,14 @@ AI layer defaults to free models via [OpenRouter](https://openrouter.ai).
 - **Hybrid AI scoring** — LLM + embedding + rule-based signals, with structured
   reasoning (strengths / gaps) rather than an opaque number
 - **Skill gap analysis** — compares your skills against a target role's requirements
+- **Skill Intelligence** — market-wide skill demand ranking and a skill co-occurrence
+  heatmap (`/market/skills`)
+- **AI Career Agent** — a Daily Brief digest of your top-matching jobs, real-time
+  high-match alerts (Opportunity Discovery), and a Career Coach chat assistant with
+  tool-calling (career path recommendations, skill trends, salary ranges)
+- **Multi-agent handoff** — a job scoring ≥ 90 against your profile triggers an
+  automatic handoff from Opportunity Discovery to Career Coach, which proactively opens
+  a conversation about that specific match
 - **Content-hash based incremental crawling** — unchanged postings skip re-parsing and
   re-embedding to control LLM cost
 - **Job closure detection** — postings removed from a company's board are marked
@@ -125,6 +137,8 @@ AI Job Parsing (LLM structured extraction, skipped for sources with native struc
        ↓
 Scoring (hybrid LLM + embedding + rule model, per active user)
   → email notification if score is high enough (Pro only)
+  → Opportunity Discovery + Daily Brief (in-app)
+  → score ≥ 90 → Agent Handoff → Career Coach proactively opens a conversation
 ```
 
 ### Compliance stance
