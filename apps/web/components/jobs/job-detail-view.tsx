@@ -12,6 +12,7 @@ import { ScoreAnalysis } from './score-analysis';
 import { JobDescription } from './job-description';
 import { JobStructuredFields } from './job-structured-fields';
 import { SourceAttribution } from './source-attribution';
+import { ApplicationStatusSelect } from './application-status-select';
 
 function BackLink() {
   const t = useTranslations('jobDetail');
@@ -67,7 +68,8 @@ export function JobDetailView({ jobId }: { jobId: string }) {
         <h1 className="text-2xl font-semibold">{job.title}</h1>
         <p className="text-muted-foreground">
           {job.company} · 🌍 {job.location}
-          {job.postedAt && ` · ${t('postedOn', { date: new Date(job.postedAt).toLocaleDateString() })}`}
+          {job.postedAt &&
+            ` · ${t('postedOn', { date: new Date(job.postedAt).toLocaleDateString() })}`}
         </p>
         <SourceAttribution source={job.source} />
       </div>
@@ -78,11 +80,19 @@ export function JobDetailView({ jobId }: { jobId: string }) {
 
       <JobDescription description={job.description} />
 
-      <Button asChild>
-        <a href={job.url} target="_blank" rel="noopener noreferrer" aria-label={t('applyAriaLabel')}>
-          {t('applyOnSource')}
-        </a>
-      </Button>
+      <div className="flex flex-wrap items-center gap-4">
+        <Button asChild>
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t('applyAriaLabel')}
+          >
+            {t('applyOnSource')}
+          </a>
+        </Button>
+        <ApplicationStatusSelect jobId={job.id} application={job.application} />
+      </div>
     </div>
   );
 }

@@ -1,10 +1,18 @@
-import type { JobListItem, JobResponse, ScoreResponse } from '@ai-job-market-intelligence/shared';
+import type {
+  ApplicationStatus,
+  JobApplicationDto,
+  JobApplicationStatusFilter,
+  JobListItem,
+  JobResponse,
+  ScoreResponse,
+} from '@ai-job-market-intelligence/shared';
 
 export interface JobsQuery {
   page: number;
   decision?: string;
   minScore?: number;
   sort?: 'score' | 'date';
+  applicationStatus?: JobApplicationStatusFilter;
 }
 
 export interface JobsListResult {
@@ -18,6 +26,7 @@ export async function fetchJobs(query: JobsQuery): Promise<JobsListResult> {
   if (query.decision) params.set('decision', query.decision);
   if (query.minScore) params.set('minScore', String(query.minScore));
   if (query.sort) params.set('sort', query.sort);
+  if (query.applicationStatus) params.set('applicationStatus', query.applicationStatus);
 
   const res = await fetch(`/api/v1/jobs?${params.toString()}`);
   if (!res.ok) throw new Error('Failed to load jobs');
@@ -37,4 +46,24 @@ export async function fetchJobScore(id: string): Promise<ScoreResponse | null> {
   if (!res.ok) throw new Error('Failed to load score');
   const body = await res.json();
   return body.data;
+}
+
+export async function updateJobApplication(
+  id: string,
+  status: ApplicationStatus,
+  note?: string,
+): Promise<JobApplicationDto> {
+  const res = await fetch(`/api/v1/jobs/${id}/application`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, note }),
+  });
+  if (!res.ok) throw new Error('Failed to update application status');
+  const body = await res.json();
+  return body.data;
+}
+
+export async function deleteJobApplication(id: string): Promise<void> {
+  const res = await fetch(`/api/v1/jobs/${id}/application`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to clear application status');
 }

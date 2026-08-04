@@ -61,6 +61,15 @@ describe('himalayasAdapter.normalize', () => {
     expect(result?.location).toBe('Remote');
   });
 
+  // locationRestrictions is kept as its own structured array (in addition
+  // to being flattened into `location`) so mapLocationRestrictionsToRegionBuckets/
+  // extractLocationCountry can read the original values instead of
+  // re-parsing joined text.
+  it('passes locationRestrictions through as a structured array', () => {
+    const result = himalayasAdapter.normalize(validRaw);
+    expect(result?.locationRestrictions).toEqual(['Worldwide']);
+  });
+
   it('leaves salaryPeriod undefined when the source omits it', () => {
     const { salaryPeriod: _period, ...rest } = validRaw;
     const result = himalayasAdapter.normalize({ ...rest, salaryPeriod: null });

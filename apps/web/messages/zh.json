@@ -64,9 +64,10 @@
     "experienceLabel": "工作年限 *",
     "rolesLabel": "期望职位 *",
     "rolesPlaceholder": "输入职位后按 Enter",
-    "regionsLabel": "期望工作国家（可选）",
+    "regionsLabel": "期望职位所在国家（可选）",
     "regionsPlaceholder": "搜索国家...",
     "regionsHint": "不选 = 不限工作地区",
+    "regionsCoverageHint": "职位是否标注了具体国家取决于原始招聘信息——不是每条职位都标注了国家，未标注的视为不限地区。",
     "salaryLabel": "期望最低年薪（USD/年，可选）",
     "salaryPlaceholder": "例如 80000",
     "salaryHint": "留空表示薪资不限",
@@ -83,9 +84,10 @@
     "experienceLabel": "工作年限 *",
     "rolesLabel": "期望职位 *",
     "rolesPlaceholder": "输入职位后按 Enter",
-    "regionsLabel": "期望工作国家（可选）",
+    "regionsLabel": "期望职位所在国家（可选）",
     "regionsPlaceholder": "搜索国家...",
     "regionsHint": "不选 = 不限工作地区",
+    "regionsCoverageHint": "职位是否标注了具体国家取决于原始招聘信息——不是每条职位都标注了国家，未标注的视为不限地区。",
     "salaryLabel": "期望最低年薪（USD/年，可选）",
     "salaryPlaceholder": "例如 80000",
     "salaryHint": "留空表示薪资不限",
@@ -222,11 +224,20 @@
       "apply": "值得申请",
       "maybe": "可以考虑",
       "skip": "不合适",
-      "minScoreLabel": "最低分数：{score}"
+      "minScoreLabel": "最低分数：{score}",
+      "applicationStatusLabel": "申请状态"
     },
     "sort": {
       "score": "按分数",
       "date": "按日期"
+    },
+    "applicationStatus": {
+      "none": "未标记",
+      "APPLIED": "✓ 已投递",
+      "INTERVIEWING": "面试中",
+      "OFFER": "已录用",
+      "REJECTED": "已拒绝",
+      "WITHDRAWN": "已撤回"
     }
   },
   "jobDetail": {
@@ -241,7 +252,18 @@
     "outOf100": "/ 100",
     "strengths": "优势：",
     "skillGaps": "技能差距：",
-    "breakdown": "细分：LLM {llmScore} · 向量匹配 {embeddingScore} · 规则 {ruleScore}"
+    "breakdown": "细分：LLM {llmScore} · 向量匹配 {embeddingScore} · 规则 {ruleScore}",
+    "application": {
+      "label": "申请状态",
+      "none": "未标记",
+      "APPLIED": "已投递",
+      "INTERVIEWING": "面试中",
+      "OFFER": "已录用",
+      "REJECTED": "已拒绝",
+      "WITHDRAWN": "已撤回",
+      "updateFailed": "更新申请状态失败，请重试。",
+      "updateSucceeded": "申请状态已更新。"
+    }
   },
   "decision": {
     "APPLY": "值得申请",

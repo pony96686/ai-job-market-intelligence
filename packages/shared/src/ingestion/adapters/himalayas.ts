@@ -123,6 +123,7 @@ function normalizeHimalayasJob(raw: HimalayasRawJob): NormalizedJob | null {
     description,
     url: raw.applicationLink,
     location: raw.locationRestrictions?.length ? raw.locationRestrictions.join(', ') : 'Remote',
+    locationRestrictions: raw.locationRestrictions,
     tags: raw.categories ?? [],
     postedAt: raw.pubDate ? new Date(raw.pubDate * 1000) : null,
     salaryMin: raw.minSalary ?? undefined,

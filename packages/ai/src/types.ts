@@ -16,6 +16,10 @@ export interface JobInput {
   company: string;
   tags: string[];
   description: string;
+  // Deterministically string-matched from location text — takes priority
+  // over eligibleRegions for R4 scoring when a single country is found (see
+  // rule-score.ts's regionPenalty).
+  locationCountry: string | null;
   eligibleRegions: RegionBucket[];
   salaryMin: number | null;
   salaryMax: number | null;

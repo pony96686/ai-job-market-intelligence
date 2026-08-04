@@ -12,7 +12,11 @@ import {
   buildJobText,
   buildStructuredJobFields,
 } from '@ai-job-market-intelligence/ai';
-import { computeContentHash } from '@ai-job-market-intelligence/shared/ingestion';
+import {
+  computeContentHash,
+  type NormalizedJob,
+} from '@ai-job-market-intelligence/shared/ingestion';
+import { extractLocationCountry } from '@ai-job-market-intelligence/shared/regions';
 import {
   getScoringMatchQueue,
   SCORING_MATCH_JOB_OPTS,
@@ -25,6 +29,13 @@ const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small';
 // manual audit.
 const DEDUP_SIMILARITY_THRESHOLD = 0.92;
 const DEDUP_WINDOW_DAYS = 14;
+
+// Deterministic, no LLM — Himalayas provides its own structured
+// locationRestrictions array; every other source only has the free-text
+// `location` string.
+function computeLocationCountry(normalized: NormalizedJob): string | null {
+  return extractLocationCountry(normalized.locationRestrictions ?? normalized.location);
+}
 
 export async function processIngestionParse(job: Job<IngestionParsePayload>): Promise<void> {
   const { normalized, companyId } = job.data;
@@ -109,6 +120,7 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
           eligibleRegions: parsed.eligibleRegions,
           parseConfidence: parsed.confidence,
         }),
+        locationCountry: computeLocationCountry(normalized),
         postedAt: normalized.postedAt,
         updatedAt: new Date(),
       },
@@ -180,6 +192,7 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
       description: normalized.description,
       url: normalized.url,
       location: normalized.location,
+      locationCountry: computeLocationCountry(normalized),
       tags: normalized.tags,
       postedAt: normalized.postedAt,
     },
@@ -194,6 +207,7 @@ export async function processIngestionParse(job: Job<IngestionParsePayload>): Pr
       salaryCurrency: normalized.salaryCurrency ?? null,
       salaryPeriod: normalized.salaryPeriod ?? null,
       eligibleRegions: parsed.eligibleRegions,
+      locationCountry: computeLocationCountry(normalized),
       parseConfidence: parsed.confidence,
       contentHash,
       description: normalized.description,

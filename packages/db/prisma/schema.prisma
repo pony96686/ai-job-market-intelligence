@@ -49,6 +49,14 @@ enum JobDecision {
   SKIP
 }
 
+enum ApplicationStatus {
+  APPLIED
+  INTERVIEWING
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
 // Job-side only — AI Job Parsing's coarse-bucket output for a posting's
 // region restriction (Job.eligibleRegions; empty = no explicit restriction
 // found, treated as globally open, not "matches nothing"). Users don't pick
@@ -122,6 +130,7 @@ model User {
   subscription        Subscription?
   usageDaily          UsageDaily[]
   jobScores           JobScore[]
+  jobApplications     JobApplication[]
   notifications       Notification[]
   accounts            Account[]
   sessions            Session[]
@@ -272,6 +281,11 @@ model Job {
   description      String        @db.Text
   url              String
   location         String        @default("Remote")
+  // ISO 3166-1 alpha-2, deterministically string-matched from `location`
+  // (or Himalayas' locationRestrictions) — null when zero or multiple
+  // countries are found. More precise than eligibleRegions and takes
+  // priority over it for R4 region-preference scoring.
+  locationCountry  String?       @map("location_country")
   // AI Job Parsing's extracted region restriction — empty = no explicit
   // restriction found (globally open).
   eligibleRegions  RegionBucket[] @default([]) @map("eligible_regions")
@@ -280,9 +294,10 @@ model Job {
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
 
-  companyRef    Company?        @relation(fields: [companyId], references: [id])
+  companyRef    Company?          @relation(fields: [companyId], references: [id])
   embedding     JobEmbedding?
   scores        JobScore[]
+  applications  JobApplication[]
   notifications Notification[]
 
   @@unique([source, externalId])
@@ -351,6 +366,30 @@ model JobScore {
   @@index([userId, score(sort: Desc)])
   @@index([userId, decision])
   @@map("job_scores")
+}
+
+// User-tracked application status — purely local bookkeeping, never synced
+// to any external platform (sources don't expose an apply/employer contact
+// API). Kept in its own table rather than folded into JobScore: JobScore
+// rows are upserted wholesale on every rescore (including the §8.7 score
+// smoothing), and a merged table would risk the application fields getting
+// clobbered by that upsert.
+model JobApplication {
+  id        String            @id @default(cuid())
+  jobId     String            @map("job_id")
+  userId    String            @map("user_id")
+  status    ApplicationStatus
+  note      String?           @db.Text
+  // First-marked time — does not change on later status updates.
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([userId, status])
+  @@map("job_applications")
 }
 
 // ─── 通知 ─────────────────────────────────────────────────

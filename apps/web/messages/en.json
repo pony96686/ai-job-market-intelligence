@@ -64,9 +64,10 @@
     "experienceLabel": "Years of Experience *",
     "rolesLabel": "Preferred Roles *",
     "rolesPlaceholder": "Type a role and press Enter...",
-    "regionsLabel": "Preferred Work Countries (optional)",
+    "regionsLabel": "Preferred Job Countries (optional)",
     "regionsPlaceholder": "Search for a country...",
     "regionsHint": "Leave empty if you're open to any region",
+    "regionsCoverageHint": "We match this against where each job posting is actually based — not every posting states one, those are treated as open to any country.",
     "salaryLabel": "Expected Minimum Salary (USD/year, optional)",
     "salaryPlaceholder": "e.g. 80000",
     "salaryHint": "Leave empty if you're flexible on salary",
@@ -83,9 +84,10 @@
     "experienceLabel": "Years of Experience *",
     "rolesLabel": "Preferred Roles *",
     "rolesPlaceholder": "Type a role and press Enter...",
-    "regionsLabel": "Preferred Work Countries (optional)",
+    "regionsLabel": "Preferred Job Countries (optional)",
     "regionsPlaceholder": "Search for a country...",
     "regionsHint": "Leave empty if you're open to any region",
+    "regionsCoverageHint": "We match this against where each job posting is actually based — not every posting states one, those are treated as open to any country.",
     "salaryLabel": "Expected Minimum Salary (USD/year, optional)",
     "salaryPlaceholder": "e.g. 80000",
     "salaryHint": "Leave empty if you're flexible on salary",
@@ -222,11 +224,20 @@
       "apply": "Apply",
       "maybe": "Maybe",
       "skip": "Skip",
-      "minScoreLabel": "Min score: {score}"
+      "minScoreLabel": "Min score: {score}",
+      "applicationStatusLabel": "Application"
     },
     "sort": {
       "score": "Score",
       "date": "Date"
+    },
+    "applicationStatus": {
+      "none": "Not applied",
+      "APPLIED": "✓ Applied",
+      "INTERVIEWING": "Interviewing",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn"
     }
   },
   "jobDetail": {
@@ -241,7 +252,18 @@
     "outOf100": "/ 100",
     "strengths": "Strengths:",
     "skillGaps": "Skill Gaps:",
-    "breakdown": "Breakdown: LLM {llmScore} · Embedding {embeddingScore} · Rules {ruleScore}"
+    "breakdown": "Breakdown: LLM {llmScore} · Embedding {embeddingScore} · Rules {ruleScore}",
+    "application": {
+      "label": "Application status",
+      "none": "Not applied",
+      "APPLIED": "Applied",
+      "INTERVIEWING": "Interviewing",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn",
+      "updateFailed": "Failed to update application status. Please try again.",
+      "updateSucceeded": "Application status updated."
+    }
   },
   "decision": {
     "APPLY": "APPLY",

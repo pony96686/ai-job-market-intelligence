@@ -38,3 +38,18 @@ const VALID_ALPHA2_CODES = new Set(Object.keys(getAlpha2Codes()));
 export function isValidCountryCode(code: string): boolean {
   return VALID_ALPHA2_CODES.has(code.toUpperCase());
 }
+
+// English alias names (includes official abbreviations like "UK" for
+// "United Kingdom") — always English regardless of a user's UI locale,
+// since this matches text sources that are always English: job.location
+// (Greenhouse/Lever/Ashby/RemoteOK) and job descriptions
+// (infer-from-text.ts's eligibleRegions supplement). Deliberately
+// i18n-iso-countries, not Intl.DisplayNames — the latter only returns a
+// single canonical name per country with no alias table at all, silently
+// losing coverage for common abbreviations (confirmed regression during
+// this table's development: swapping to Intl.DisplayNames lost the "UK"
+// alias and changed compound names like "Bosnia and Herzegovina" to
+// "Bosnia & Herzegovina", breaking real-world matches).
+export const COUNTRY_NAME_TO_ALPHA2: ReadonlyMap<string, string> = new Map(
+  Object.entries(getNames('en', { select: 'alias' })).map(([code, name]) => [name, code]),
+);
