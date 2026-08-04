@@ -1,5 +1,6 @@
 import type { NormalizedJob, ParsedJobFields } from '@ai-job-market-intelligence/shared/ingestion';
 import { normalizeSkill } from '@ai-job-market-intelligence/shared/skills';
+import { inferEligibleRegionsFromText } from '@ai-job-market-intelligence/shared/regions';
 
 // Sources that set sourceStructured=true (currently only Himalayas) already
 // provide salary/seniority/employmentType natively — this builds
@@ -59,9 +60,11 @@ export function buildStructuredJobFields(normalized: NormalizedJob): ParsedJobFi
     salaryMin: normalized.salaryMin ?? null,
     salaryMax: normalized.salaryMax ?? null,
     remote: true,
-    // Fixed empty — none of today's sourceStructured sources natively
-    // provide a region field.
-    eligibleRegions: [],
+    // sourceStructured sources don't natively provide a region field, but
+    // their free-text description often states an explicit restriction
+    // anyway (e.g. "specialists located in LATAM time zones") — derive it
+    // deterministically rather than hardcoding "no restriction".
+    eligibleRegions: inferEligibleRegionsFromText(`${normalized.title} ${normalized.description}`),
     confidence: 1.0,
   };
 }
