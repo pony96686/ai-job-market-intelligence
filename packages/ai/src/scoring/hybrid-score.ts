@@ -35,6 +35,17 @@ export interface ScoringResult {
 const EMBEDDING_SKIP_THRESHOLD = 20;
 const RULE_SKIP_THRESHOLD = 30;
 
+// Exported so scoring-match.ts's >=90 agent-handoff re-verification (a
+// second llm_score sample averaged with the first — see ai-scoring.md §8.7)
+// can recombine into a final score without duplicating these weights.
+export function combineFinalScore(
+  llmScore: number,
+  embeddingScore: number,
+  ruleScore: number,
+): number {
+  return Math.round(0.4 * llmScore + 0.4 * embeddingScore + 0.2 * ruleScore);
+}
+
 export async function scoreJob(
   profile: ProfileInput,
   job: JobInput,
@@ -91,7 +102,7 @@ export async function scoreJob(
     };
   }
 
-  const finalScore = Math.round(0.4 * llmResult.score + 0.4 * embeddingScore + 0.2 * ruleScore);
+  const finalScore = combineFinalScore(llmResult.score, embeddingScore, ruleScore);
 
   return {
     score: finalScore,
