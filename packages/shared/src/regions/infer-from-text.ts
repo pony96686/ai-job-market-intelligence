@@ -1,18 +1,14 @@
-import i18nIsoCountries from 'i18n-iso-countries';
 import type { RegionBucket } from '../schemas/common';
 import { mapCountryToRegionBucket } from './country-region-map';
+import { COUNTRY_NAME_TO_ALPHA2 } from './countries';
 
-const { getNames } = i18nIsoCountries;
-
-// Deterministic, regex-based supplement to LLM eligibleRegions extraction.
-// Two known gaps this covers:
-// 1. Himalayas jobs (sourceStructured=true) skip LLM parsing entirely and
-//    previously hardcoded eligibleRegions=[] unconditionally, even though
-//    their free-text description often states an explicit restriction
-//    (e.g. "specialists located in LATAM time zones").
-// 2. The LLM-parsed path (parseJobFields) sometimes misses an explicit
-//    restriction despite the prompt's own instructions covering it — this
-//    runs as a fallback when the LLM returns an empty array.
+// Deterministic, regex-based fallback for the LLM-parsed path
+// (parse-job-fields.ts): the LLM's own eligibleRegions extraction sometimes
+// misses an explicit restriction despite the prompt covering it — this runs
+// when the LLM returns an empty array. sourceStructured sources (Himalayas)
+// don't go through this at all; they use their own native
+// locationRestrictions field instead (see mapLocationRestrictionsToRegionBuckets
+// in ./location-country.ts).
 // Precision over recall by design: every pattern here was built from a real
 // posting that stated an explicit restriction, not a guess. A restriction
 // that isn't caught just falls back to "no restriction detected" (the
@@ -24,8 +20,7 @@ let countryNameToCode: Map<string, string> | null = null;
 function getCountryNameToCode(): Map<string, string> {
   if (countryNameToCode) return countryNameToCode;
   const map = new Map<string, string>();
-  const names = getNames('en', { select: 'alias' });
-  for (const [code, name] of Object.entries(names)) {
+  for (const [name, code] of COUNTRY_NAME_TO_ALPHA2) {
     map.set(name.toLowerCase(), code);
   }
   // Common short forms real postings use that aren't the official alias.

@@ -20,6 +20,12 @@ export interface NormalizedJob {
   salaryPeriod?: SalaryPeriod;
   sourceStructured?: boolean;
   seniority?: string;
+  // Only Himalayas sets this — its native, structured list of location/
+  // country restrictions (see HimalayasRawJob.locationRestrictions), kept
+  // separate from the flattened `location` display string above so
+  // mapLocationRestrictionsToRegionBuckets/extractLocationCountry can read
+  // the original structured values instead of re-parsing joined text.
+  locationRestrictions?: string[];
 }
 
 // Tier 3 sources (LinkedIn/Indeed/Glassdoor) MUST NOT implement this interface.

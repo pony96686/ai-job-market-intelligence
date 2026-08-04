@@ -23,6 +23,7 @@ const job = {
   company: 'Acme',
   tags: ['node', 'typescript'],
   description: 'We need someone strong in Node.js and TypeScript.',
+  locationCountry: null,
   eligibleRegions: [],
   salaryMin: null,
   salaryMax: null,

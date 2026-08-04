@@ -7,6 +7,7 @@ const job: JobInput = {
   company: 'Acme',
   tags: ['node', 'typescript'],
   description: 'We need someone strong in Node.js and TypeScript.',
+  locationCountry: null,
   eligibleRegions: [],
   salaryMin: null,
   salaryMax: null,
@@ -120,6 +121,31 @@ describe('regionPenalty', () => {
     // US -> US bucket, DE -> EU bucket
     const profile = { ...baseProfile, preferredCountries: ['US', 'DE'] };
     expect(regionPenalty(profile, { ...job, eligibleRegions: ['EU', 'UK'] })).toBe(0);
+  });
+
+  it('prioritizes locationCountry over eligibleRegions when both are present', () => {
+    const profile = { ...baseProfile, preferredCountries: ['US'] };
+    // eligibleRegions says EU (would mismatch), but locationCountry is an
+    // exact US match — locationCountry wins, no bucket mapping involved.
+    expect(regionPenalty(profile, { ...job, locationCountry: 'US', eligibleRegions: ['EU'] })).toBe(
+      0,
+    );
+  });
+
+  it('penalizes an exact locationCountry mismatch even if it would map to an overlapping bucket', () => {
+    const profile = { ...baseProfile, preferredCountries: ['DE'] };
+    // DE and FR both map to the EU bucket, but locationCountry is compared
+    // as an exact country, not a bucket — FR !== DE.
+    expect(regionPenalty(profile, { ...job, locationCountry: 'FR', eligibleRegions: ['EU'] })).toBe(
+      20,
+    );
+  });
+
+  it('falls back to eligibleRegions when locationCountry could not be resolved', () => {
+    const profile = { ...baseProfile, preferredCountries: ['US'] };
+    expect(regionPenalty(profile, { ...job, locationCountry: null, eligibleRegions: ['EU'] })).toBe(
+      20,
+    );
   });
 });
 

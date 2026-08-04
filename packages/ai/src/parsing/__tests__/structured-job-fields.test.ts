@@ -80,14 +80,12 @@ describe('buildStructuredJobFields', () => {
     expect(result.confidence).toBe(1.0);
   });
 
-  // sourceStructured jobs (Himalayas) don't have a native region field, but
-  // their free-text description can still state an explicit restriction —
-  // this must not be silently dropped just because there's no LLM call.
-  it('derives eligibleRegions from the description when it states an explicit restriction', () => {
+  // Himalayas' own locationRestrictions field is structured data this
+  // previously ignored entirely (always mapped eligibleRegions to []).
+  it('derives eligibleRegions from Himalayas locationRestrictions', () => {
     const result = buildStructuredJobFields({
       ...baseNormalized,
-      description:
-        'This is a full-time remote position for specialists located in LATAM time zones close to the US.',
+      locationRestrictions: ['Brazil'],
     });
     expect(result.eligibleRegions).toEqual(['LATAM']);
   });

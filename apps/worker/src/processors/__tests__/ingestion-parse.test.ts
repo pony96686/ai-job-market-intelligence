@@ -195,7 +195,7 @@ describe('processIngestionParse', () => {
     );
     expect(mockUpdate).toHaveBeenCalledWith({
       where: { id: 'job-1' },
-      data: { postedAt: normalized.postedAt, updatedAt: expect.any(Date) },
+      data: { locationCountry: null, postedAt: normalized.postedAt, updatedAt: expect.any(Date) },
     });
     expect(mockQueueAdd).toHaveBeenCalledTimes(2);
     expect(mockQueueAdd).toHaveBeenCalledWith(
@@ -259,6 +259,29 @@ describe('processIngestionParse', () => {
     expect(mockRecordAlsoSeenOn).toHaveBeenCalledWith('canonical-job', 'REMOTEOK');
     expect(mockUpsert).not.toHaveBeenCalled();
     expect(mockQueueAdd).not.toHaveBeenCalled();
+  });
+
+  it('deterministically sets locationCountry from the normalized location text', async () => {
+    await processIngestionParse(
+      makeJob({ normalized: { ...normalized, location: 'Poland' }, companyId: 'company-1' }),
+    );
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ locationCountry: 'PL' }),
+        update: expect.objectContaining({ locationCountry: 'PL' }),
+      }),
+    );
+  });
+
+  it('leaves locationCountry null when the location text has no single resolvable country', async () => {
+    await processIngestionParse(makeJob({ normalized, companyId: 'company-1' })); // location: 'Remote'
+
+    expect(mockUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ locationCountry: null }),
+      }),
+    );
   });
 
   it('skips AI Job Parsing for sourceStructured normalized jobs (Himalayas)', async () => {

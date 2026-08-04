@@ -281,6 +281,11 @@ model Job {
   description      String        @db.Text
   url              String
   location         String        @default("Remote")
+  // ISO 3166-1 alpha-2, deterministically string-matched from `location`
+  // (or Himalayas' locationRestrictions) — null when zero or multiple
+  // countries are found. More precise than eligibleRegions and takes
+  // priority over it for R4 region-preference scoring.
+  locationCountry  String?       @map("location_country")
   // AI Job Parsing's extracted region restriction — empty = no explicit
   // restriction found (globally open).
   eligibleRegions  RegionBucket[] @default([]) @map("eligible_regions")

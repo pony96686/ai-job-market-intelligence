@@ -137,6 +137,7 @@ export function OnboardingForm() {
           )}
         />
         <p className="text-xs text-muted-foreground">{t('regionsHint')}</p>
+        <p className="text-xs text-muted-foreground">{t('regionsCoverageHint')}</p>
         {errors.preferredCountries && (
           <p className="text-sm text-destructive">{errors.preferredCountries.message}</p>
         )}

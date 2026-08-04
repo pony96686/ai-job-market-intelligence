@@ -1,4 +1,5 @@
 import type { NormalizedJob } from './types';
+import { escapeRegExp } from '../utils/regex';
 
 const MAX_POSTED_AGE_DAYS = 90;
 const REMOTE_LOCATION_PATTERN = /remote|worldwide|anywhere|🌍/i;
@@ -59,8 +60,7 @@ const EXCLUDED_TITLE_KEYWORDS = [
 ];
 
 function toWordBoundaryPattern(keyword: string): RegExp {
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`\\b${escaped}\\b`, 'i');
+  return new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i');
 }
 
 const EXCLUDED_TITLE_PATTERNS = EXCLUDED_TITLE_KEYWORDS.map(toWordBoundaryPattern);

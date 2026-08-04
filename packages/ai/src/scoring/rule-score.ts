@@ -78,11 +78,20 @@ export function computeRuleScore(profile: ProfileInput, job: JobInput): number {
 // R4 region preference: a ranking-only deduction, not a
 // veto — preferredCountries expresses where the user *wants* to work, not
 // where they're eligible to work, so a mismatch still gets scored normally
-// and shown, just ranked lower. The user fills in actual countries (not an
-// abstract bucket), so their countries are mapped to a RegionBucket here
-// before comparing against the job's eligibleRegions.
+// and shown, just ranked lower. Two signals, most precise first:
+// 1. job.locationCountry — a single country deterministically parsed from
+//    the posting's own location text, compared directly against
+//    preferredCountries with no bucket mapping involved.
+// 2. job.eligibleRegions — JD-derived region buckets, used when
+//    locationCountry couldn't resolve to exactly one country (e.g. generic
+//    "Remote", or multiple countries listed).
 export function regionPenalty(profile: ProfileInput, job: JobInput): number {
   if (profile.preferredCountries.length === 0) return 0; // no preference, don't check
+
+  if (job.locationCountry) {
+    return profile.preferredCountries.includes(job.locationCountry) ? 0 : REGION_MISMATCH_PENALTY;
+  }
+
   if (job.eligibleRegions.length === 0) return 0; // no explicit restriction, treated as globally open
 
   const preferredBuckets = profile.preferredCountries.map(mapCountryToRegionBucket);
