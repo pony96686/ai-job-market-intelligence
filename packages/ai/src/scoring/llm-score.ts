@@ -32,7 +32,11 @@ async function callLLM(
 ): Promise<LLMScoreResult> {
   const response = await getOpenRouterClient().chat.completions.create({
     model,
-    temperature: 0.2,
+    // 0 (was 0.2) to converge the sampling-driven half of run-to-run score
+    // noise — observed llm_score swings of 94->14 on unchanged input go
+    // beyond what temperature alone explains (see ai-scoring.md §8.7), so
+    // this alone isn't a full fix, just the cheap first layer of one.
+    temperature: 0,
     // gpt-oss-20b is a reasoning model: with a tight token budget it can burn
     // the whole budget on chain-of-thought and return empty `content`.
     // reasoning_effort caps that spend, and the higher max_tokens leaves
