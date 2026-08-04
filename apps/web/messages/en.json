@@ -222,11 +222,20 @@
       "apply": "Apply",
       "maybe": "Maybe",
       "skip": "Skip",
-      "minScoreLabel": "Min score: {score}"
+      "minScoreLabel": "Min score: {score}",
+      "applicationStatusLabel": "Application"
     },
     "sort": {
       "score": "Score",
       "date": "Date"
+    },
+    "applicationStatus": {
+      "none": "Not applied",
+      "APPLIED": "✓ Applied",
+      "INTERVIEWING": "Interviewing",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn"
     }
   },
   "jobDetail": {
@@ -241,7 +250,18 @@
     "outOf100": "/ 100",
     "strengths": "Strengths:",
     "skillGaps": "Skill Gaps:",
-    "breakdown": "Breakdown: LLM {llmScore} · Embedding {embeddingScore} · Rules {ruleScore}"
+    "breakdown": "Breakdown: LLM {llmScore} · Embedding {embeddingScore} · Rules {ruleScore}",
+    "application": {
+      "label": "Application status",
+      "none": "Not applied",
+      "APPLIED": "Applied",
+      "INTERVIEWING": "Interviewing",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "WITHDRAWN": "Withdrawn",
+      "updateFailed": "Failed to update application status. Please try again.",
+      "updateSucceeded": "Application status updated."
+    }
   },
   "decision": {
     "APPLY": "APPLY",

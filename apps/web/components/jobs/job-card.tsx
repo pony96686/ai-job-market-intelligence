@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { ScoreRing } from './score-ring';
 import { SourceAttribution } from './source-attribution';
+import { ApplicationBadge } from './application-badge';
 
 export function JobCard({ job }: { job: JobListItem }) {
   const t = useTranslations('jobs');
@@ -25,6 +26,11 @@ export function JobCard({ job }: { job: JobListItem }) {
           clickable <a> instead of being nested inside this one. */}
       <Link href={`/jobs/${job.id}`} className="absolute inset-0" aria-label={job.title} />
       <div className="min-w-0 flex-1 space-y-1">
+        {job.application && (
+          <span className="pointer-events-none inline-block">
+            <ApplicationBadge status={job.application.status} />
+          </span>
+        )}
         <p className="truncate font-medium">{job.title}</p>
         <p className="truncate text-sm text-muted-foreground">
           {job.company} · {job.location}

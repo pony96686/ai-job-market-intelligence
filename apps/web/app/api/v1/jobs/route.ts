@@ -14,13 +14,20 @@ export async function GET(request: Request) {
   if (!parsed.success) {
     return apiError('VALIDATION_ERROR', 400, parsed.error.issues);
   }
-  const { page, pageSize, decision, minScore, sort } = parsed.data;
+  const { page, pageSize, decision, minScore, sort, applicationStatus } = parsed.data;
 
   const where = {
     userId: session.user.id,
     // CLOSED postings are excluded from the list by default but not deleted
     // (still reachable directly via /jobs/[id]).
-    job: { status: 'ACTIVE' as const },
+    job: {
+      status: 'ACTIVE' as const,
+      ...(applicationStatus === 'NONE' && { applications: { none: { userId: session.user.id } } }),
+      ...(applicationStatus &&
+        applicationStatus !== 'NONE' && {
+          applications: { some: { userId: session.user.id, status: applicationStatus } },
+        }),
+    },
     ...(decision && { decision }),
     ...(minScore !== undefined && { score: { gte: minScore } }),
   };
@@ -28,16 +35,18 @@ export async function GET(request: Request) {
   const [scores, total] = await Promise.all([
     prisma.jobScore.findMany({
       where,
-      include: { job: true },
-      orderBy: sort === 'date' ? { job: { postedAt: 'desc' as const } } : { score: 'desc' as const },
+      include: { job: { include: { applications: { where: { userId: session.user.id } } } } },
+      orderBy:
+        sort === 'date' ? { job: { postedAt: 'desc' as const } } : { score: 'desc' as const },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
     prisma.jobScore.count({ where }),
   ]);
 
-  const data = scores.map((s) =>
-    JobListItemSchema.parse({
+  const data = scores.map((s) => {
+    const application = s.job.applications[0] ?? null;
+    return JobListItemSchema.parse({
       id: s.job.id,
       title: s.job.title,
       company: s.job.company,
@@ -55,8 +64,12 @@ export async function GET(request: Request) {
         strengths: s.strengths,
         skillGap: s.skillGap,
       },
-    }),
-  );
+      application: application && {
+        status: application.status,
+        updatedAt: application.updatedAt.toISOString(),
+      },
+    });
+  });
 
   return apiSuccess(data, {
     page,

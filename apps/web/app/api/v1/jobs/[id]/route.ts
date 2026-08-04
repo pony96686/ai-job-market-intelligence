@@ -10,10 +10,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const job = await prisma.job.findUnique({ where: { id } });
+  const job = await prisma.job.findUnique({
+    where: { id },
+    include: { applications: { where: { userId: session.user.id } } },
+  });
   if (!job) {
     return apiError('NOT_FOUND', 404, undefined, 'Job not found');
   }
+  const application = job.applications[0] ?? null;
 
   const data = JobResponseSchema.parse({
     id: job.id,
@@ -36,6 +40,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     status: job.status,
     postedAt: job.postedAt?.toISOString() ?? null,
     createdAt: job.createdAt.toISOString(),
+    application: application && {
+      status: application.status,
+      updatedAt: application.updatedAt.toISOString(),
+    },
   });
 
   return apiSuccess(data);

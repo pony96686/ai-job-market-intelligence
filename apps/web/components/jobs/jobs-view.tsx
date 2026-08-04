@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import type { JobDecision } from '@ai-job-market-intelligence/shared';
+import type { JobDecision, JobApplicationStatusFilter } from '@ai-job-market-intelligence/shared';
 import { fetchJobs } from '@/lib/api/jobs';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from '@/i18n/navigation';
@@ -26,6 +26,8 @@ export function JobsView() {
   const decision = (searchParams.get('decision') as JobDecision | null) ?? 'ALL';
   const minScore = Number(searchParams.get('minScore') ?? 0);
   const sort = (searchParams.get('sort') as JobSort | null) ?? 'score';
+  const applicationStatus =
+    (searchParams.get('applicationStatus') as JobApplicationStatusFilter | null) ?? 'ALL';
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams.toString());
@@ -39,13 +41,14 @@ export function JobsView() {
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['jobs', { decision, minScore, sort }],
+      queryKey: ['jobs', { decision, minScore, sort, applicationStatus }],
       queryFn: ({ pageParam }) =>
         fetchJobs({
           page: pageParam,
           decision: decision === 'ALL' ? undefined : decision,
           minScore: minScore || undefined,
           sort,
+          applicationStatus: applicationStatus === 'ALL' ? undefined : applicationStatus,
         }),
       initialPageParam: 1,
       getNextPageParam: (lastPage) =>
@@ -67,8 +70,10 @@ export function JobsView() {
           <JobFilters
             decision={decision}
             minScore={minScore}
+            applicationStatus={applicationStatus}
             onDecisionChange={(v) => updateParam('decision', v)}
             onMinScoreChange={(v) => updateParam('minScore', String(v))}
+            onApplicationStatusChange={(v) => updateParam('applicationStatus', v)}
           />
           <JobSortSelect value={sort} onChange={(v) => updateParam('sort', v)} />
         </div>
@@ -97,7 +102,11 @@ export function JobsView() {
           </div>
           {hasNextPage && (
             <div className="flex justify-center">
-              <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+              <Button
+                variant="outline"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
                 {isFetchingNextPage ? tCommon('loading') : t('loadMore')}
               </Button>
             </div>

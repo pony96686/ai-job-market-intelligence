@@ -16,10 +16,55 @@ export type SalaryPeriod = z.infer<typeof SalaryPeriodSchema>;
 export const JobStatusSchema = z.enum(['ACTIVE', 'CLOSED']);
 export type JobStatus = z.infer<typeof JobStatusSchema>;
 
+// User-tracked application status — purely local bookkeeping (see
+// database-schema.md §6.6 JobApplication), never synced to any external
+// platform.
+export const ApplicationStatusSchema = z.enum([
+  'APPLIED',
+  'INTERVIEWING',
+  'OFFER',
+  'REJECTED',
+  'WITHDRAWN',
+]);
+export type ApplicationStatus = z.infer<typeof ApplicationStatusSchema>;
+
+// 'NONE' is a filter-only value (not a stored status) meaning "no
+// application record for this job" — GET /jobs?applicationStatus=NONE.
+export const JobApplicationStatusFilterSchema = z.enum([
+  ...ApplicationStatusSchema.options,
+  'NONE',
+]);
+export type JobApplicationStatusFilter = z.infer<typeof JobApplicationStatusFilterSchema>;
+
+// Embedded in JobListItem/JobResponse — the trimmed-down shape shown
+// alongside a job, not the full PUT /jobs/:id/application response.
+export const JobApplicationSummarySchema = z.object({
+  status: ApplicationStatusSchema,
+  updatedAt: z.string().datetime(),
+});
+export type JobApplicationSummary = z.infer<typeof JobApplicationSummarySchema>;
+
+// Full PUT /jobs/:id/application response body.
+export const JobApplicationSchema = z.object({
+  jobId: z.string(),
+  status: ApplicationStatusSchema,
+  note: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+export type JobApplicationDto = z.infer<typeof JobApplicationSchema>;
+
+export const UpdateJobApplicationSchema = z.object({
+  status: ApplicationStatusSchema,
+  note: z.string().max(500).optional(),
+});
+export type UpdateJobApplicationInput = z.infer<typeof UpdateJobApplicationSchema>;
+
 export const JobListQuerySchema = PaginationQuerySchema.extend({
   decision: JobDecisionSchema.optional(),
   minScore: z.coerce.number().int().min(0).max(100).optional(),
   sort: z.enum(['score', 'date']).default('score'),
+  applicationStatus: JobApplicationStatusFilterSchema.optional(),
 });
 export type JobListQuery = z.infer<typeof JobListQuerySchema>;
 
@@ -43,6 +88,7 @@ export const JobListItemSchema = z.object({
   tags: z.array(z.string()),
   postedAt: z.string().datetime().nullable(),
   score: JobScoreSummarySchema,
+  application: JobApplicationSummarySchema.nullable(),
 });
 export type JobListItem = z.infer<typeof JobListItemSchema>;
 
@@ -69,5 +115,6 @@ export const JobResponseSchema = z.object({
   status: JobStatusSchema,
   postedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
+  application: JobApplicationSummarySchema.nullable(),
 });
 export type JobResponse = z.infer<typeof JobResponseSchema>;
