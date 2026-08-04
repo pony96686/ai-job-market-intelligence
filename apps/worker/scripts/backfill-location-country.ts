@@ -20,8 +20,16 @@ async function main() {
 
   let locationCountryUpdated = 0;
   let eligibleRegionsUpdated = 0;
+  let scanned = 0;
+
+  // Progress logging matters here specifically because each iteration is a
+  // separate awaited round trip — against a remote (non-local) DATABASE_URL
+  // this loop can take minutes with zero output otherwise, indistinguishable
+  // from a hung connection.
+  const PROGRESS_INTERVAL = 500;
 
   for (const job of jobs) {
+    scanned++;
     const locationCountry = extractLocationCountry(job.location);
     const data: { locationCountry?: string; eligibleRegions?: string[] } = {};
 
@@ -43,11 +51,17 @@ async function main() {
       }
     }
 
-    if (Object.keys(data).length === 0) continue;
+    if (Object.keys(data).length > 0) {
+      await prisma.job.update({ where: { id: job.id }, data });
+      if (data.locationCountry) locationCountryUpdated++;
+      if (data.eligibleRegions) eligibleRegionsUpdated++;
+    }
 
-    await prisma.job.update({ where: { id: job.id }, data });
-    if (data.locationCountry) locationCountryUpdated++;
-    if (data.eligibleRegions) eligibleRegionsUpdated++;
+    if (scanned % PROGRESS_INTERVAL === 0) {
+      console.log(
+        `Progress: ${scanned}/${jobs.length} scanned, ${locationCountryUpdated} locationCountry set, ${eligibleRegionsUpdated} eligibleRegions updated`,
+      );
+    }
   }
 
   console.log(`Scanned ${jobs.length} jobs.`);

@@ -17,12 +17,18 @@ export async function canScore(userId: string): Promise<boolean> {
 }
 
 // Only called when a job_score is newly created (idempotent updates for the
-// same jobId+userId don't count toward usage)
+// same jobId+userId don't count toward usage). Upsert, not update — PRO
+// users never go through canScore()'s UsageDaily.upsert (it returns early on
+// the plan check), so a PRO user's first score of the day has no row yet.
+// scoreCount is still tracked for PRO users (not just quota enforcement):
+// GET /api/v1/billing/subscription reads it back as `usage.scoresToday`
+// regardless of plan.
 export async function incrementUsage(userId: string): Promise<void> {
   const today = startOfDayUTC(new Date());
-  await prisma.usageDaily.update({
+  await prisma.usageDaily.upsert({
     where: { userId_date: { userId, date: today } },
-    data: { scoreCount: { increment: 1 } },
+    create: { userId, date: today, scoreCount: 1 },
+    update: { scoreCount: { increment: 1 } },
   });
 }
 
