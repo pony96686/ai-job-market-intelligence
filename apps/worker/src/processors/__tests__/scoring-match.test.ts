@@ -18,11 +18,13 @@ const {
   mockUpsertScore: vi.fn(),
 }));
 
-const { mockBuildProfileText, mockGenerateEmbedding, mockScoreJob } = vi.hoisted(() => ({
-  mockBuildProfileText: vi.fn(() => 'profile-text'),
-  mockGenerateEmbedding: vi.fn(),
-  mockScoreJob: vi.fn(),
-}));
+const { mockBuildProfileText, mockGenerateEmbedding, mockScoreJob, mockComputeLLMScore } =
+  vi.hoisted(() => ({
+    mockBuildProfileText: vi.fn(() => 'profile-text'),
+    mockGenerateEmbedding: vi.fn(),
+    mockScoreJob: vi.fn(),
+    mockComputeLLMScore: vi.fn(),
+  }));
 
 const { mockCanScore, mockIncrementUsage } = vi.hoisted(() => ({
   mockCanScore: vi.fn(),
@@ -44,11 +46,19 @@ vi.mock('@ai-job-market-intelligence/db', () => ({
   upsertProfileEmbedding: mockUpsertProfileEmbedding,
 }));
 
-vi.mock('@ai-job-market-intelligence/ai', () => ({
-  buildProfileText: mockBuildProfileText,
-  generateEmbedding: mockGenerateEmbedding,
-  scoreJob: mockScoreJob,
-}));
+// toDecision/combineFinalScore are kept real (not mocked) so smoothing and
+// re-verification tests exercise the actual threshold/weighting logic
+// instead of duplicating it in test fixtures.
+vi.mock('@ai-job-market-intelligence/ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ai-job-market-intelligence/ai')>();
+  return {
+    ...actual,
+    buildProfileText: mockBuildProfileText,
+    generateEmbedding: mockGenerateEmbedding,
+    scoreJob: mockScoreJob,
+    computeLLMScore: mockComputeLLMScore,
+  };
+});
 
 vi.mock('../../billing/usage.js', () => ({
   canScore: mockCanScore,
@@ -66,15 +76,18 @@ vi.mock('../../logger.js', () => ({
 
 import { processScoringMatch } from '../scoring-match';
 
+// llmScore/embeddingScore/ruleScore are internally consistent with score
+// (0.4*95 + 0.4*90 + 0.2*90 = 92) so re-verification math in the >=90 tests
+// below is meaningful rather than testing against an arbitrary override.
 const scoringResult = {
-  score: 85,
+  score: 92,
   decision: 'APPLY' as const,
   reasoning: 'Great match',
   strengths: ['Node.js experience'],
   skillGap: [],
-  llmScore: 85,
-  embeddingScore: 80,
-  ruleScore: 80,
+  llmScore: 95,
+  embeddingScore: 90,
+  ruleScore: 90,
   scoringVersion: 'v3' as const,
 };
 
@@ -92,6 +105,7 @@ beforeEach(() => {
   mockUpsertScore.mockReset();
   mockGenerateEmbedding.mockReset();
   mockScoreJob.mockReset();
+  mockComputeLLMScore.mockReset();
   mockCanScore.mockReset();
   mockIncrementUsage.mockReset();
   mockAgentHandoffQueueAdd.mockReset();
@@ -169,23 +183,97 @@ describe('processScoringMatch', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('enqueues an agent_handoff when the score is >= 90', async () => {
-    mockScoreJob.mockResolvedValue({ ...scoringResult, score: 94 });
-
-    await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
-
-    expect(mockAgentHandoffQueueAdd).toHaveBeenCalledWith(
-      'handoff',
-      { jobId: 'job-1', userId: 'user-1', matchScore: 94 },
-      expect.objectContaining({ jobId: 'handoff:job-1:user-1' }),
-    );
-  });
-
   it('does not enqueue an agent_handoff below the 90 threshold', async () => {
     mockScoreJob.mockResolvedValue({ ...scoringResult, score: 89 });
 
     await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
 
     expect(mockAgentHandoffQueueAdd).not.toHaveBeenCalled();
+    expect(mockComputeLLMScore).not.toHaveBeenCalled();
+  });
+
+  // >=90 re-verification (ai-scoring.md §8.7 / v3-scope.md §2 决策 #7): a
+  // single llm_score sample isn't trusted on its own — a second sample is
+  // averaged in and the combined score re-checked before actually enqueuing.
+  describe('>=90 agent_handoff re-verification', () => {
+    it('enqueues when a second LLM sample confirms the score stays >= 90', async () => {
+      // avg(100, 90) = 95 -> 0.4*95 + 0.4*90 + 0.2*90 = 92
+      mockScoreJob.mockResolvedValue({ ...scoringResult, score: 94, llmScore: 100 });
+      mockComputeLLMScore.mockResolvedValue({
+        score: 90,
+        reasoning: 'second look',
+        strengths: [],
+        skillGap: [],
+      });
+
+      await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+      expect(mockComputeLLMScore).toHaveBeenCalledTimes(1);
+      expect(mockAgentHandoffQueueAdd).toHaveBeenCalledWith(
+        'handoff',
+        { jobId: 'job-1', userId: 'user-1', matchScore: 94 },
+        expect.objectContaining({ jobId: 'handoff:job-1:user-1' }),
+      );
+    });
+
+    it('does not enqueue when the second sample pulls the averaged score back below 90', async () => {
+      // avg(100, 10) = 55 -> 0.4*55 + 0.4*90 + 0.2*90 = 76
+      mockScoreJob.mockResolvedValue({ ...scoringResult, score: 94, llmScore: 100 });
+      mockComputeLLMScore.mockResolvedValue({
+        score: 10,
+        reasoning: 'second look',
+        strengths: [],
+        skillGap: [],
+      });
+
+      await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+      expect(mockAgentHandoffQueueAdd).not.toHaveBeenCalled();
+      // The originally-computed (smoothed) score/decision still get written
+      // — only the handoff enqueue is gated by re-verification.
+      expect(mockUpsertScore).toHaveBeenCalledWith(
+        expect.objectContaining({ create: expect.objectContaining({ score: 94 }) }),
+      );
+    });
+
+    it('does not enqueue when the second LLM call fails entirely', async () => {
+      mockScoreJob.mockResolvedValue({ ...scoringResult, score: 94, llmScore: 100 });
+      mockComputeLLMScore.mockResolvedValue(null);
+
+      await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+      expect(mockAgentHandoffQueueAdd).not.toHaveBeenCalled();
+    });
+  });
+
+  // Display-layer smoothing (ai-scoring.md §8.7): repeat scoring of the same
+  // (job, user) blends with the prior stored score; sub-scores stay raw.
+  describe('score smoothing', () => {
+    it('blends the new score with the existing record 0.7/0.3 when one exists', async () => {
+      mockFindScore.mockResolvedValue({ id: 'existing-score', score: 50 });
+
+      await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+      // round(0.7*92 + 0.3*50) = round(64.4 + 15) = 79 -> still APPLY (>=75)
+      expect(mockUpsertScore).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({
+            score: 79,
+            decision: 'APPLY',
+            llmScore: 95,
+            embeddingScore: 90,
+            ruleScore: 90,
+          }),
+        }),
+      );
+    });
+
+    it('does not smooth first-time scoring (no existing record)', async () => {
+      await processScoringMatch(makeJob({ jobId: 'job-1', userId: 'user-1' }));
+
+      expect(mockUpsertScore).toHaveBeenCalledWith(
+        expect.objectContaining({ create: expect.objectContaining({ score: 92 }) }),
+      );
+    });
   });
 });
