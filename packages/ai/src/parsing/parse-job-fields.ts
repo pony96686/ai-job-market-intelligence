@@ -4,6 +4,7 @@ import { parseLLMJson } from '../parse-llm-json';
 import { JOB_PARSING_SYSTEM_PROMPT, buildJobParsingUserPrompt } from '../prompts/job-parsing';
 import { callWithFallback } from '../fallback';
 import type { ParsedJobFields } from '@ai-job-market-intelligence/shared/ingestion';
+import { inferEligibleRegionsFromText } from '@ai-job-market-intelligence/shared/regions';
 
 // OpenRouter model slugs require a 'vendor/' prefix — a bare model name gets
 // rejected with a 400 (see packages/ai/src/scoring/llm-score.ts for the same
@@ -87,5 +88,17 @@ export async function parseJobFields(input: ParseJobFieldsInput): Promise<Parsed
     (model, attempt, error) =>
       console.error(`[parse-job-fields] attempt ${attempt} (${model}) failed:`, error),
   );
-  return result ?? EMPTY_RESULT;
+  const parsed = result ?? EMPTY_RESULT;
+
+  // The LLM's own eligibleRegions extraction sometimes misses an explicit
+  // restriction despite the prompt covering it (and total LLM failure
+  // leaves EMPTY_RESULT's eligibleRegions empty too) — fall back to the same
+  // deterministic detector used for sourceStructured sources rather than
+  // trusting an empty array as "no restriction stated".
+  if (parsed.eligibleRegions.length === 0) {
+    const inferred = inferEligibleRegionsFromText(`${input.title} ${input.description}`);
+    if (inferred.length > 0) return { ...parsed, eligibleRegions: inferred };
+  }
+
+  return parsed;
 }
