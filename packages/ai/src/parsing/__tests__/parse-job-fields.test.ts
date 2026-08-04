@@ -48,6 +48,41 @@ describe('parseJobFields', () => {
     expect(result.confidence).toBe(0.9);
   });
 
+  // The LLM's own eligibleRegions extraction is unreliable even when the
+  // rest of the response is well-formed — this deterministic supplement
+  // catches an explicit restriction the LLM missed rather than trusting an
+  // empty array as "no restriction stated".
+  it('fills in eligibleRegions from the description when the LLM returns an empty array but the text states a restriction', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              role: 'Backend Engineer',
+              level: 'Senior',
+              skills: ['typescript'],
+              salaryMin: null,
+              salaryMax: null,
+              remote: true,
+              eligibleRegions: [],
+              confidence: 0.9,
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await parseJobFields({
+      title: 'Senior Backend Engineer',
+      description:
+        'This is a full-time remote position for specialists located in LATAM time zones close to the US.',
+      tags: [],
+    });
+
+    expect(result.eligibleRegions).toEqual(['LATAM']);
+    expect(result.confidence).toBe(0.9); // supplement only touches eligibleRegions
+  });
+
   it('falls back to a confidence=0 result after two failed attempts instead of throwing', async () => {
     mockCreate.mockResolvedValue({ choices: [{ message: { content: 'not json' } }] });
 
