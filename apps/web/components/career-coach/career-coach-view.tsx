@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,6 +11,7 @@ import {
   CareerCoachSendError,
 } from '@/lib/api/career-agent';
 import { markAgentHandoffsViewed } from '@/lib/agent-handoff-viewed';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,6 +35,9 @@ interface ChatMessage {
 export function CareerCoachView() {
   const t = useTranslations('careerCoach');
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { data: history, isLoading } = useQuery({
     queryKey: ['career-coach-history'],
@@ -47,6 +52,7 @@ export function CareerCoachView() {
   const [isClearing, setIsClearing] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const draftOutreachTriggered = useRef(false);
 
   useEffect(() => {
     if (!hydrated && history) {
@@ -65,28 +71,58 @@ export function CareerCoachView() {
     markAgentHandoffsViewed();
   }, []);
 
-  async function handleSend() {
-    const content = input.trim();
+  // DraftOutreachButton's entry point: jobId in the URL means send a
+  // canned first message automatically,
+  // scoped to that job via the API's jobId field rather than expecting the
+  // user to describe which job they mean. Waits for hydration so this
+  // doesn't race the history load and duplicate-send on a fast re-render;
+  // the ref (not just the query param) guards against re-firing if the
+  // effect re-runs before the param is stripped from the URL below.
+  useEffect(() => {
+    const jobId = searchParams.get('jobId');
+    if (!jobId || !hydrated || draftOutreachTriggered.current) return;
+    draftOutreachTriggered.current = true;
+
+    const remainingParams = new URLSearchParams(searchParams.toString());
+    remainingParams.delete('jobId');
+    const query = remainingParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    void handleSend(t('draftOutreachMessage'), jobId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, hydrated]);
+
+  async function handleSend(overrideContent?: string, jobId?: string) {
+    const content = (overrideContent ?? input).trim();
     if (!content || isSending) return;
 
-    setInput('');
+    if (!overrideContent) setInput('');
     setError(null);
     setIsSending(true);
     setMessages((prev) => [...prev, { role: 'USER', content }, { role: 'ASSISTANT', content: '' }]);
 
     try {
-      await sendCareerCoachMessage(content, (delta) => {
-        setMessages((prev) => {
-          const next = [...prev];
-          const last = next[next.length - 1]!;
-          next[next.length - 1] = { ...last, content: last.content + delta };
-          return next;
-        });
-      });
+      await sendCareerCoachMessage(
+        content,
+        (delta) => {
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1]!;
+            next[next.length - 1] = { ...last, content: last.content + delta };
+            return next;
+          });
+        },
+        jobId,
+      );
     } catch (err) {
       // Drop the empty ASSISTANT placeholder — no content ever arrived, so
-      // showing a permanently-empty bubble reads as "still thinking".
-      setMessages((prev) => prev.slice(0, -1));
+      // showing a permanently-empty bubble reads as "still thinking". For
+      // the DraftOutreachButton auto-send (jobId set), also drop the USER
+      // bubble: it's canned text the user never typed, and route.ts never
+      // persisted it (the jobId ownership check runs before the message is
+      // saved) — keeping it visible would be a client-only ghost message
+      // with no server-side counterpart. A manually-typed message keeps its
+      // USER bubble so the user can see what they wrote and retry.
+      setMessages((prev) => prev.slice(0, jobId ? -2 : -1));
       setError(
         err instanceof CareerCoachSendError && err.code === 'RATE_LIMITED'
           ? 'rateLimited'

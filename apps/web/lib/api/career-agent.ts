@@ -54,11 +54,12 @@ export async function clearCareerCoachHistory(): Promise<void> {
 export async function sendCareerCoachMessage(
   content: string,
   onDelta: (delta: string) => void,
+  jobId?: string,
 ): Promise<void> {
   const res = await fetch('/api/v1/career-coach/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(jobId ? { content, jobId } : { content }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => null);

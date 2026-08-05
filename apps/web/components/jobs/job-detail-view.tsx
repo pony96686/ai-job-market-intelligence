@@ -13,6 +13,7 @@ import { JobDescription } from './job-description';
 import { JobStructuredFields } from './job-structured-fields';
 import { SourceAttribution } from './source-attribution';
 import { ApplicationStatusSelect } from './application-status-select';
+import { DraftOutreachButton } from './draft-outreach-button';
 
 function BackLink() {
   const t = useTranslations('jobDetail');
@@ -80,7 +81,7 @@ export function JobDetailView({ jobId }: { jobId: string }) {
 
       <JobDescription description={job.description} />
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-start gap-4">
         <Button asChild>
           <a
             href={job.url}
@@ -92,6 +93,7 @@ export function JobDetailView({ jobId }: { jobId: string }) {
           </a>
         </Button>
         <ApplicationStatusSelect jobId={job.id} application={job.application} />
+        <DraftOutreachButton jobId={job.id} />
       </div>
     </div>
   );

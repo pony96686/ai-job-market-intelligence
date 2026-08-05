@@ -202,7 +202,8 @@
     "handoffFound": "{title} @ {company} — {score}% match",
     "handoffReason": "Triggered because {reason}",
     "handoffStatusDone": "Coach replied",
-    "handoffStatusPending": "Pending"
+    "handoffStatusPending": "Pending",
+    "draftOutreachMessage": "Help me draft an outreach/networking message for this job."
   },
   "jobs": {
     "title": "Jobs",
@@ -263,6 +264,10 @@
       "WITHDRAWN": "Withdrawn",
       "updateFailed": "Failed to update application status. Please try again.",
       "updateSucceeded": "Application status updated."
+    },
+    "draftOutreach": {
+      "button": "Draft Outreach Message",
+      "disclaimer": "Drafts message text only — finding the contact and sending it is up to you."
     }
   },
   "decision": {
