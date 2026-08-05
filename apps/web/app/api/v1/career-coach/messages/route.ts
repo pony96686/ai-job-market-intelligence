@@ -71,6 +71,19 @@ export async function POST(request: Request) {
     return apiError('VALIDATION_ERROR', 400, parsed.error.issues);
   }
 
+  // Validated up front (not left to the agent's own get_job_context tool
+  // call) so an invalid/foreign jobId — e.g. someone editing the
+  // /career-coach?jobId= URL by hand — is rejected outright instead of
+  // spending an LLM call on a request that could never have produced a
+  // useful answer.
+  if (parsed.data.jobId) {
+    const ownsJob = await prisma.jobScore.findUnique({
+      where: { jobId_userId: { jobId: parsed.data.jobId, userId } },
+      select: { jobId: true },
+    });
+    if (!ownsJob) return apiError('NOT_FOUND', 404);
+  }
+
   await prisma.careerCoachMessage.create({
     data: { userId, role: 'USER', content: parsed.data.content },
   });
@@ -86,7 +99,11 @@ export async function POST(request: Request) {
 
   let answer: string;
   try {
-    answer = await runCareerCoachTurn(history, createCareerCoachToolExecutor(userId));
+    answer = await runCareerCoachTurn(
+      history,
+      createCareerCoachToolExecutor(userId),
+      parsed.data.jobId,
+    );
   } catch (error) {
     if (error instanceof CareerCoachRateLimitError) {
       return apiError('RATE_LIMITED', 429);

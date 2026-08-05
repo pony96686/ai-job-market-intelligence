@@ -85,6 +85,35 @@ async function getSalaryRangeTool(args: Record<string, unknown>): Promise<unknow
   return getSalaryRange(role, region, annualSalaries);
 }
 
+// Scoped by userId in the query itself — the model is only ever told (via
+// coach-agent.ts's per-turn directive) to call this with the jobId the
+// requesting user's own DraftOutreachButton passed in, but this defends
+// against a hallucinated/mismatched jobId ever leaking another user's
+// job_scores (title/company/role are not sensitive, but strengths/reasoning
+// are that user's own AI analysis).
+async function getJobContextTool(userId: string, args: Record<string, unknown>): Promise<unknown> {
+  const jobId = String(args.jobId ?? '').trim();
+  if (!jobId) return { error: 'No jobId provided.' };
+
+  const jobScore = await prisma.jobScore.findUnique({
+    where: { jobId_userId: { jobId, userId } },
+    select: {
+      strengths: true,
+      reasoning: true,
+      job: { select: { title: true, company: true, role: true } },
+    },
+  });
+  if (!jobScore) return { error: 'This job is not associated with the current user.' };
+
+  return {
+    title: jobScore.job.title,
+    company: jobScore.job.company,
+    role: jobScore.job.role,
+    strengths: jobScore.strengths,
+    reasoning: jobScore.reasoning,
+  };
+}
+
 // Tool execution needs Prisma, which packages/ai deliberately doesn't
 // depend on — this is the DB-backed implementation of the tool contract
 // runCareerCoachTurn calls into, scoped to the requesting user. Lives in
@@ -100,6 +129,8 @@ export function createCareerCoachToolExecutor(userId: string): CareerCoachToolEx
         return getSkillTrendTool(args);
       case 'get_salary_range':
         return getSalaryRangeTool(args);
+      case 'get_job_context':
+        return getJobContextTool(userId, args);
       default:
         return { error: `Unknown tool: ${name}` };
     }

@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockAuth, mockFindMany, mockCreate, mockDeleteMany } = vi.hoisted(() => ({
-  mockAuth: vi.fn(),
-  mockFindMany: vi.fn(),
-  mockCreate: vi.fn(),
-  mockDeleteMany: vi.fn(),
-}));
+const { mockAuth, mockFindMany, mockCreate, mockDeleteMany, mockJobScoreFindUnique } = vi.hoisted(
+  () => ({
+    mockAuth: vi.fn(),
+    mockFindMany: vi.fn(),
+    mockCreate: vi.fn(),
+    mockDeleteMany: vi.fn(),
+    mockJobScoreFindUnique: vi.fn(),
+  }),
+);
 
 const { mockRunCareerCoachTurn } = vi.hoisted(() => ({ mockRunCareerCoachTurn: vi.fn() }));
 
@@ -18,6 +21,7 @@ vi.mock('@/lib/auth', () => ({ auth: mockAuth }));
 vi.mock('@ai-job-market-intelligence/db', () => ({
   prisma: {
     careerCoachMessage: { findMany: mockFindMany, create: mockCreate, deleteMany: mockDeleteMany },
+    jobScore: { findUnique: mockJobScoreFindUnique },
   },
   createCareerCoachToolExecutor: mockCreateToolExecutor,
 }));
@@ -46,6 +50,7 @@ beforeEach(() => {
   mockFindMany.mockReset();
   mockCreate.mockReset();
   mockDeleteMany.mockReset();
+  mockJobScoreFindUnique.mockReset();
   mockRunCareerCoachTurn.mockReset();
   mockCreateToolExecutor.mockReset().mockReturnValue(vi.fn());
 
@@ -53,6 +58,7 @@ beforeEach(() => {
   mockCreate.mockResolvedValue({});
   mockFindMany.mockResolvedValue([]);
   mockDeleteMany.mockResolvedValue({ count: 0 });
+  mockJobScoreFindUnique.mockResolvedValue({ jobId: 'job-1' });
   mockRunCareerCoachTurn.mockResolvedValue('Hi there');
 });
 
@@ -112,6 +118,44 @@ describe('POST /api/v1/career-coach/messages', () => {
     await POST(makePostRequest({ content: 'hi' }));
 
     expect(mockCreateToolExecutor).toHaveBeenCalledWith('user-1');
+  });
+
+  // jobId ownership is checked up front, before ever calling the agent.
+  it('passes a valid jobId through to runCareerCoachTurn after confirming ownership', async () => {
+    mockJobScoreFindUnique.mockResolvedValue({ jobId: 'job-1' });
+
+    await POST(makePostRequest({ content: 'hi', jobId: 'job-1' }));
+
+    expect(mockJobScoreFindUnique).toHaveBeenCalledWith({
+      where: { jobId_userId: { jobId: 'job-1', userId: 'user-1' } },
+      select: { jobId: true },
+    });
+    expect(mockRunCareerCoachTurn).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'job-1',
+    );
+  });
+
+  it("returns 404 and never calls the agent when jobId doesn't belong to the requesting user's job_scores", async () => {
+    mockJobScoreFindUnique.mockResolvedValue(null);
+
+    const res = await POST(makePostRequest({ content: 'hi', jobId: 'someone-elses-job' }));
+
+    expect(res.status).toBe(404);
+    expect(mockRunCareerCoachTurn).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('calls runCareerCoachTurn with jobId undefined when the request omits it', async () => {
+    await POST(makePostRequest({ content: 'hi' }));
+
+    expect(mockJobScoreFindUnique).not.toHaveBeenCalled();
+    expect(mockRunCareerCoachTurn).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+    );
   });
 
   it('persists the assistant reply', async () => {

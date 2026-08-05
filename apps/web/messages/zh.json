@@ -202,7 +202,8 @@
     "handoffFound": "{title} @ {company} —— 匹配度 {score}%",
     "handoffReason": "触发原因：{reason}",
     "handoffStatusDone": "教练已回复",
-    "handoffStatusPending": "处理中"
+    "handoffStatusPending": "处理中",
+    "draftOutreachMessage": "帮我针对这个职位写一份主动联系（outreach）文案。"
   },
   "jobs": {
     "title": "职位",
@@ -263,6 +264,10 @@
       "WITHDRAWN": "已撤回",
       "updateFailed": "更新申请状态失败，请重试。",
       "updateSucceeded": "申请状态已更新。"
+    },
+    "draftOutreach": {
+      "button": "起草主动联系文案",
+      "disclaimer": "仅生成文案草稿，联系人查找与实际发送需自行完成。"
     }
   },
   "decision": {

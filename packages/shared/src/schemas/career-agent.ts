@@ -59,6 +59,10 @@ export type CareerCoachMessageDto = z.infer<typeof CareerCoachMessageSchema>;
 
 export const CareerCoachSendMessageSchema = z.object({
   content: z.string().min(1).max(2000),
+  // Set only by DraftOutreachButton's /career-coach?jobId= redirect — never
+  // guessed from chat text. The route validates it against the requesting
+  // user's own job_scores before this reaches the agent.
+  jobId: z.string().optional(),
 });
 export type CareerCoachSendMessage = z.infer<typeof CareerCoachSendMessageSchema>;
 

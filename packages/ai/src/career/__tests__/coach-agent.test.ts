@@ -69,6 +69,29 @@ describe('runCareerCoachTurn', () => {
     expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ max_tokens: 5000 }));
   });
 
+  it('injects a job-context directive naming the exact jobId when one is provided', async () => {
+    mockCreate.mockResolvedValue(textResponse('Here is a draft outreach message.'));
+
+    await runCareerCoachTurn(history, vi.fn(), 'job-123');
+
+    const call = mockCreate.mock.calls[0]![0] as { messages: { role: string; content: string }[] };
+    const directive = call.messages.find(
+      (m) => m.role === 'system' && m.content.includes('job-123'),
+    );
+    expect(directive).toBeDefined();
+    expect(directive!.content).toContain('get_job_context');
+  });
+
+  it('does not inject any job-context directive when jobId is omitted', async () => {
+    mockCreate.mockResolvedValue(textResponse('Hi, how can I help with your career?'));
+
+    await runCareerCoachTurn(history, vi.fn());
+
+    const call = mockCreate.mock.calls[0]![0] as { messages: { role: string; content: string }[] };
+    const systemMessages = call.messages.filter((m) => m.role === 'system');
+    expect(systemMessages).toHaveLength(1); // just CAREER_COACH_SYSTEM_PROMPT
+  });
+
   it('executes the requested tool and feeds the result back for the final answer', async () => {
     const executeTool = vi.fn().mockResolvedValue({ min: 90000, max: 150000, median: 120000 });
     mockCreate

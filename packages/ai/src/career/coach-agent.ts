@@ -62,6 +62,21 @@ export const CAREER_COACH_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'get_job_context',
+      description:
+        "Get context for a specific job: title, company, role, and this user's own match strengths/reasoning for that job. Only call this with a jobId you were explicitly given by the system — never with a jobId guessed from the user's chat text.",
+      parameters: {
+        type: 'object',
+        properties: {
+          jobId: { type: 'string', description: 'The job ID to fetch context for.' },
+        },
+        required: ['jobId'],
+      },
+    },
+  },
 ];
 
 // Never invent numbers — Career Coach only states what a tool call
@@ -73,7 +88,16 @@ Rules:
 - You MUST call the relevant tool before answering any question involving market data (career paths, skill demand/growth, salary ranges). Never guess or invent a number.
 - If a tool returns an error or reports insufficient data, say so plainly instead of making up a plausible-sounding answer.
 - Keep answers concise and concrete, grounded only in tool results.
-- Reply in the same language as the user's latest message (this product is bilingual, English/Chinese) — do not default to English when the user writes in Chinese.`;
+- Reply in the same language as the user's latest message (this product is bilingual, English/Chinese) — do not default to English when the user writes in Chinese.
+- Never invent a specific contact person's name — this product has no recruiter/contact data at all. If drafting an outreach message that would normally open with a name, use a generic placeholder like "Hiring Team" instead, and don't claim to know who to send it to.`;
+
+// Injected only for this turn when the request carries a jobId (see
+// CareerCoachSendMessageSchema) — tells the model exactly which job to fetch
+// instead of leaving it to infer one from the chat text, which is the whole
+// point of routing DraftOutreachButton through jobId rather than free text.
+function buildJobContextDirective(jobId: string): string {
+  return `The user is asking about a specific job (jobId: "${jobId}"). Call get_job_context with jobId="${jobId}" before answering, then use the returned title/company/role/strengths/reasoning to help with their request (e.g. drafting an outreach message). Do not call get_job_context with any other jobId.`;
+}
 
 export interface CareerCoachMessage {
   role: 'user' | 'assistant';
@@ -123,12 +147,14 @@ function parseToolArguments(raw: string): Record<string, unknown> {
 export async function runCareerCoachTurn(
   history: CareerCoachMessage[],
   executeTool: CareerCoachToolExecutor,
+  jobId?: string,
 ): Promise<string> {
   const client = getOpenRouterClient();
   const model = process.env.CAREER_COACH_MODEL ?? DEFAULT_CAREER_COACH_MODEL;
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: 'system', content: CAREER_COACH_SYSTEM_PROMPT },
+    ...(jobId ? [{ role: 'system' as const, content: buildJobContextDirective(jobId) }] : []),
     ...history.map((m): OpenAI.Chat.ChatCompletionMessageParam => ({
       role: m.role,
       content: m.content,
