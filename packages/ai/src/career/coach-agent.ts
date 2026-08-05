@@ -135,7 +135,13 @@ export async function runCareerCoachTurn(
         client.chat.completions.create({
           model: roundModel,
           temperature: 0.3,
-          max_tokens: 800,
+          // 800 was too tight for long-form asks (e.g. "give me a resume
+          // template") — the model would hit the cap mid-generation and
+          // return truncated markdown instead of an incomplete-but-honest
+          // answer, since this isn't real token streaming (see the
+          // runCareerCoachTurn doc comment above): the full text is
+          // resolved before anything is sent to the client.
+          max_tokens: 1500,
           reasoning_effort: 'low',
           tools: CAREER_COACH_TOOLS,
           messages,
