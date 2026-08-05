@@ -23,7 +23,15 @@ const JobParseOutputSchema = z.object({
   skills: z.array(z.string()).max(30),
   salaryMin: z.number().int().nullable(),
   salaryMax: z.number().int().nullable(),
-  remote: z.boolean(),
+  // Prompted as a plain boolean, but weaker free models return null when the
+  // posting doesn't make remote status clear — nullable+transform absorbs
+  // that instead of rejecting the entire response (role/skills/salaryMin/
+  // salaryMax/eligibleRegions/confidence) over this one ambiguous field.
+  // EMPTY_RESULT's own remote default is also false.
+  remote: z
+    .boolean()
+    .nullable()
+    .transform((v) => v ?? false),
   eligibleRegions: z.array(RegionBucketSchema).max(7),
   confidence: z.number().min(0).max(1),
 });
