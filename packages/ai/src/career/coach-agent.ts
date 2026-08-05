@@ -9,6 +9,13 @@ import { callWithFallback } from '../fallback';
 const DEFAULT_CAREER_COACH_MODEL = 'openai/gpt-oss-20b:free';
 const MAX_TOOL_ROUNDS = 3; // guards against a runaway tool-call loop
 
+// Long-form asks (resume templates, cover letters) can run well past a
+// short conversational reply — tune via env instead of another
+// code-change-and-redeploy cycle if this turns out to still be too tight
+// (or too generous — a free-tier model, but a larger completion still
+// costs generation time).
+const DEFAULT_CAREER_COACH_MAX_TOKENS = 3000;
+
 export const CAREER_COACH_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   {
     type: 'function',
@@ -135,13 +142,15 @@ export async function runCareerCoachTurn(
         client.chat.completions.create({
           model: roundModel,
           temperature: 0.3,
-          // 800 was too tight for long-form asks (e.g. "give me a resume
-          // template") — the model would hit the cap mid-generation and
-          // return truncated markdown instead of an incomplete-but-honest
-          // answer, since this isn't real token streaming (see the
-          // runCareerCoachTurn doc comment above): the full text is
-          // resolved before anything is sent to the client.
-          max_tokens: 1500,
+          // A fixed 800/1500 both proved too tight for long-form asks (e.g.
+          // "give me a resume template") — the model would hit the cap
+          // mid-generation and return truncated markdown instead of an
+          // incomplete-but-honest answer, since this isn't real token
+          // streaming (see the runCareerCoachTurn doc comment above): the
+          // full text is resolved before anything is sent to the client.
+          max_tokens: Number(
+            process.env.CAREER_COACH_MAX_TOKENS ?? DEFAULT_CAREER_COACH_MAX_TOKENS,
+          ),
           reasoning_effort: 'low',
           tools: CAREER_COACH_TOOLS,
           messages,

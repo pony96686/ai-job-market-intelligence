@@ -39,6 +39,7 @@ const history: CareerCoachMessage[] = [
 
 beforeEach(() => {
   mockCreate.mockReset();
+  delete process.env.CAREER_COACH_MAX_TOKENS;
 });
 
 describe('runCareerCoachTurn', () => {
@@ -49,6 +50,23 @@ describe('runCareerCoachTurn', () => {
 
     expect(result).toBe('Hi, how can I help with your career?');
     expect(mockCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults max_tokens to 3000 when CAREER_COACH_MAX_TOKENS is unset', async () => {
+    mockCreate.mockResolvedValue(textResponse('Hi, how can I help with your career?'));
+
+    await runCareerCoachTurn(history, vi.fn());
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ max_tokens: 3000 }));
+  });
+
+  it('respects a custom CAREER_COACH_MAX_TOKENS value', async () => {
+    process.env.CAREER_COACH_MAX_TOKENS = '5000';
+    mockCreate.mockResolvedValue(textResponse('Hi, how can I help with your career?'));
+
+    await runCareerCoachTurn(history, vi.fn());
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ max_tokens: 5000 }));
   });
 
   it('executes the requested tool and feeds the result back for the final answer', async () => {
