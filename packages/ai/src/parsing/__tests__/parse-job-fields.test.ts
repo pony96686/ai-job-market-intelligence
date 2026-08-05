@@ -83,6 +83,41 @@ describe('parseJobFields', () => {
     expect(result.confidence).toBe(0.9); // supplement only touches eligibleRegions
   });
 
+  // google/gemma-4-26b-a4b-it:free returns remote: null (instead of
+  // true/false) when the posting doesn't make remote status clear — this
+  // must not discard the rest of an otherwise well-formed response.
+  it('coalesces a null remote field to false instead of rejecting the whole response', async () => {
+    mockCreate.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              role: 'Backend Engineer',
+              level: 'Senior',
+              skills: ['typescript'],
+              salaryMin: null,
+              salaryMax: null,
+              remote: null,
+              eligibleRegions: [],
+              confidence: 0.9,
+            }),
+          },
+        },
+      ],
+    });
+
+    const result = await parseJobFields({
+      title: 'Senior Backend Engineer',
+      description: 'Build our platform.',
+      tags: [],
+    });
+
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(result.remote).toBe(false);
+    expect(result.role).toBe('Backend Engineer');
+    expect(result.confidence).toBe(0.9);
+  });
+
   it('falls back to a confidence=0 result after two failed attempts instead of throwing', async () => {
     mockCreate.mockResolvedValue({ choices: [{ message: { content: 'not json' } }] });
 
