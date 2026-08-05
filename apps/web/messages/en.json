@@ -193,6 +193,7 @@
     "send": "Send",
     "sendFailed": "Failed to send. Please try again.",
     "rateLimited": "The AI service has hit today's usage limit. Please try again later.",
+    "quotaExceeded": "You've reached today's Career Coach message limit. It resets at midnight UTC.",
     "clearConversation": "Clear conversation",
     "clearConfirmTitle": "Clear this conversation?",
     "clearConfirmDescription": "This permanently deletes your entire Career Coach conversation history. This cannot be undone.",

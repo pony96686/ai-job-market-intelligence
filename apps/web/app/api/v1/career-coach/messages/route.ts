@@ -1,5 +1,10 @@
 import { auth } from '@/lib/auth';
-import { prisma, createCareerCoachToolExecutor } from '@ai-job-market-intelligence/db';
+import {
+  prisma,
+  createCareerCoachToolExecutor,
+  canSendCareerCoachMessage,
+  incrementCareerCoachUsage,
+} from '@ai-job-market-intelligence/db';
 import {
   runCareerCoachTurn,
   CareerCoachRateLimitError,
@@ -84,9 +89,16 @@ export async function POST(request: Request) {
     if (!ownsJob) return apiError('NOT_FOUND', 404);
   }
 
+  // Hard cap checked before any model call — a paid fallback model must
+  // never be reachable once a user is over their daily quota.
+  if (!(await canSendCareerCoachMessage(userId))) {
+    return apiError('CAREER_COACH_QUOTA_EXCEEDED', 403);
+  }
+
   await prisma.careerCoachMessage.create({
     data: { userId, role: 'USER', content: parsed.data.content },
   });
+  await incrementCareerCoachUsage(userId);
 
   const recentMessages = await prisma.careerCoachMessage.findMany({
     where: { userId },
