@@ -27,3 +27,4 @@ export * from '@prisma/client';
 export * from './vectors';
 export * from './company';
 export * from './career-coach-tools';
+export * from './career-coach-usage';

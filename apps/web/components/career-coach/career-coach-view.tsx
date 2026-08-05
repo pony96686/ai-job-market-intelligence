@@ -47,7 +47,7 @@ export function CareerCoachView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<'rateLimited' | 'generic' | null>(null);
+  const [error, setError] = useState<'rateLimited' | 'quotaExceeded' | 'generic' | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
@@ -123,11 +123,16 @@ export function CareerCoachView() {
       // with no server-side counterpart. A manually-typed message keeps its
       // USER bubble so the user can see what they wrote and retry.
       setMessages((prev) => prev.slice(0, jobId ? -2 : -1));
-      setError(
-        err instanceof CareerCoachSendError && err.code === 'RATE_LIMITED'
-          ? 'rateLimited'
-          : 'generic',
-      );
+      if (err instanceof CareerCoachSendError && err.code === 'RATE_LIMITED') {
+        setError('rateLimited');
+      } else if (
+        err instanceof CareerCoachSendError &&
+        err.code === 'CAREER_COACH_QUOTA_EXCEEDED'
+      ) {
+        setError('quotaExceeded');
+      } else {
+        setError('generic');
+      }
     } finally {
       setIsSending(false);
     }
@@ -205,7 +210,11 @@ export function CareerCoachView() {
         )}
         {error && (
           <p className="text-sm text-destructive">
-            {error === 'rateLimited' ? t('rateLimited') : t('sendFailed')}
+            {error === 'rateLimited'
+              ? t('rateLimited')
+              : error === 'quotaExceeded'
+                ? t('quotaExceeded')
+                : t('sendFailed')}
           </p>
         )}
         <div ref={bottomRef} />

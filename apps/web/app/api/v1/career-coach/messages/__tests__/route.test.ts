@@ -1,14 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockAuth, mockFindMany, mockCreate, mockDeleteMany, mockJobScoreFindUnique } = vi.hoisted(
-  () => ({
-    mockAuth: vi.fn(),
-    mockFindMany: vi.fn(),
-    mockCreate: vi.fn(),
-    mockDeleteMany: vi.fn(),
-    mockJobScoreFindUnique: vi.fn(),
-  }),
-);
+const {
+  mockAuth,
+  mockFindMany,
+  mockCreate,
+  mockDeleteMany,
+  mockJobScoreFindUnique,
+  mockCanSendCareerCoachMessage,
+  mockIncrementCareerCoachUsage,
+} = vi.hoisted(() => ({
+  mockAuth: vi.fn(),
+  mockFindMany: vi.fn(),
+  mockCreate: vi.fn(),
+  mockDeleteMany: vi.fn(),
+  mockJobScoreFindUnique: vi.fn(),
+  mockCanSendCareerCoachMessage: vi.fn(),
+  mockIncrementCareerCoachUsage: vi.fn(),
+}));
 
 const { mockRunCareerCoachTurn } = vi.hoisted(() => ({ mockRunCareerCoachTurn: vi.fn() }));
 
@@ -24,6 +32,8 @@ vi.mock('@ai-job-market-intelligence/db', () => ({
     jobScore: { findUnique: mockJobScoreFindUnique },
   },
   createCareerCoachToolExecutor: mockCreateToolExecutor,
+  canSendCareerCoachMessage: mockCanSendCareerCoachMessage,
+  incrementCareerCoachUsage: mockIncrementCareerCoachUsage,
 }));
 
 vi.mock('@ai-job-market-intelligence/ai', async (importOriginal) => ({
@@ -53,6 +63,8 @@ beforeEach(() => {
   mockJobScoreFindUnique.mockReset();
   mockRunCareerCoachTurn.mockReset();
   mockCreateToolExecutor.mockReset().mockReturnValue(vi.fn());
+  mockCanSendCareerCoachMessage.mockReset();
+  mockIncrementCareerCoachUsage.mockReset();
 
   mockAuth.mockResolvedValue({ user: { id: 'user-1' } });
   mockCreate.mockResolvedValue({});
@@ -60,6 +72,8 @@ beforeEach(() => {
   mockDeleteMany.mockResolvedValue({ count: 0 });
   mockJobScoreFindUnique.mockResolvedValue({ jobId: 'job-1' });
   mockRunCareerCoachTurn.mockResolvedValue('Hi there');
+  mockCanSendCareerCoachMessage.mockResolvedValue(true);
+  mockIncrementCareerCoachUsage.mockResolvedValue(undefined);
 });
 
 describe('GET /api/v1/career-coach/messages', () => {
@@ -156,6 +170,28 @@ describe('POST /api/v1/career-coach/messages', () => {
       expect.anything(),
       undefined,
     );
+  });
+
+  // Hard cap enforced before any model call or message write — a paid
+  // fallback model must never be reachable once a user is over quota.
+  it('returns 403 with CAREER_COACH_QUOTA_EXCEEDED and never writes or calls the agent when over the daily limit', async () => {
+    mockCanSendCareerCoachMessage.mockResolvedValue(false);
+
+    const res = await POST(makePostRequest({ content: 'hi' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body.error.code).toBe('CAREER_COACH_QUOTA_EXCEEDED');
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockIncrementCareerCoachUsage).not.toHaveBeenCalled();
+    expect(mockRunCareerCoachTurn).not.toHaveBeenCalled();
+  });
+
+  it('checks the quota for the requesting user and increments usage once the message is persisted', async () => {
+    await POST(makePostRequest({ content: 'hi' }));
+
+    expect(mockCanSendCareerCoachMessage).toHaveBeenCalledWith('user-1');
+    expect(mockIncrementCareerCoachUsage).toHaveBeenCalledWith('user-1');
   });
 
   it('persists the assistant reply', async () => {

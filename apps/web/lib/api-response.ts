@@ -8,6 +8,7 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   NOT_FOUND: 'Resource not found',
   PROFILE_INCOMPLETE: 'Please complete onboarding first',
   QUOTA_EXCEEDED: 'Daily scoring quota exceeded',
+  CAREER_COACH_QUOTA_EXCEEDED: 'Daily Career Coach message quota exceeded',
   BILLING_ERROR: 'Billing provider request failed',
   RATE_LIMITED: 'Too many requests. Please try again later.',
   INTERNAL_ERROR: 'Something went wrong',

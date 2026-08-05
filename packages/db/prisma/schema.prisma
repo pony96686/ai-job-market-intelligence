@@ -452,10 +452,11 @@ model Order {
 }
 
 model UsageDaily {
-  id         String   @id @default(cuid())
-  userId     String   @map("user_id")
-  date       DateTime @db.Date
-  scoreCount Int      @default(0) @map("score_count")
+  id                      String   @id @default(cuid())
+  userId                  String   @map("user_id")
+  date                    DateTime @db.Date
+  scoreCount              Int      @default(0) @map("score_count")
+  careerCoachMessageCount Int      @default(0) @map("career_coach_message_count")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

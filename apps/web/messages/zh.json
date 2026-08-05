@@ -193,6 +193,7 @@
     "send": "发送",
     "sendFailed": "发送失败，请重试。",
     "rateLimited": "AI 服务今日额度已用完，请稍后再试。",
+    "quotaExceeded": "你今日的 Career Coach 消息条数已达上限，将于 UTC 时间凌晨 0 点重置。",
     "clearConversation": "清空对话",
     "clearConfirmTitle": "确定要清空这段对话吗？",
     "clearConfirmDescription": "这会永久删除你在职业教练里的全部对话历史，操作无法撤销。",
